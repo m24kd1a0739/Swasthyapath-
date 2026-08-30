@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { initialPatientData } from '../data/mockPatient';
 import { mockFacilities } from '../data/mockFacilities';
 import { translations } from '../data/translations';
@@ -6,17 +7,33 @@ import { translations } from '../data/translations';
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
-  // Authentication & Role
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Authentication: Default FALSE for clean initial Welcome/Landing page experience
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('swasthya_auth') === 'true' || true; // Default true for instant demo
+    return localStorage.getItem('swasthya_auth') === 'true';
   });
+
+  // User Role: 'patient' | 'health-worker' | 'facility-staff' | 'admin'
   const [userRole, setUserRole] = useState(() => {
     return localStorage.getItem('swasthya_role') || 'patient';
   });
 
-  // Active Screen & Navigation
-  const [currentScreen, setCurrentScreen] = useState('dashboard');
-  const [navigationHistory, setNavigationHistory] = useState(['dashboard']);
+  // Pending Auth Data for Registration / OTP flow
+  const [pendingRegData, setPendingRegData] = useState(() => {
+    return {
+      fullName: 'Arun Kumar',
+      mobile: '9876543210',
+      dob: '1994-06-14',
+      gender: 'Male',
+      location: 'Civil Lines, Bhopal',
+      language: 'en',
+      emergencyName: 'Sunita Kumar',
+      emergencyPhone: '+91 98765 43211',
+      emergencyRel: 'Spouse'
+    };
+  });
 
   // Language & Accessibility
   const [language, setLanguage] = useState(() => {
@@ -29,7 +46,7 @@ export const AppProvider = ({ children }) => {
   // Network Connectivity State (Online / Syncing / Offline)
   const [networkStatus, setNetworkStatus] = useState('online');
 
-  // Shared Reactive Patient & Medical State
+  // Shared Reactive Patient & Medical State (Arun Kumar demo dataset)
   const [patientData, setPatientData] = useState(() => {
     const saved = localStorage.getItem('swasthya_patient_state');
     if (saved) {
@@ -57,12 +74,8 @@ export const AppProvider = ({ children }) => {
 
   const [selectedFacility, setSelectedFacility] = useState(mockFacilities[0]);
 
-  // Modals & Overlays
+  // Overlays
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState(null); // 'login' | 'register' | null
-  const [otpModalOpen, setOtpModalOpen] = useState(false);
-  const [profileWizardOpen, setProfileWizardOpen] = useState(false);
-  const [facilityDetailsModalOpen, setFacilityDetailsModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -71,7 +84,11 @@ export const AppProvider = ({ children }) => {
   const [demoStep, setDemoStep] = useState(1);
   const [demoTourActive, setDemoTourActive] = useState(false);
 
-  // Save to LocalStorage whenever state changes
+  // Save auth & state to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('swasthya_auth', isAuthenticated ? 'true' : 'false');
+  }, [isAuthenticated]);
+
   useEffect(() => {
     localStorage.setItem('swasthya_patient_state', JSON.stringify(patientData));
   }, [patientData]);
@@ -101,26 +118,60 @@ export const AppProvider = ({ children }) => {
     if (fontSize === 'xlarge') document.body.classList.add('text-xlarge');
   }, [highContrast, fontSize]);
 
-  // Navigation Helper
-  const navigateTo = (screen, paramFacility = null) => {
+  // Unified Navigation Route Helper
+  const navigateTo = (pathOrScreen, paramFacility = null) => {
     if (paramFacility) {
       setSelectedFacility(paramFacility);
     }
-    setNavigationHistory(prev => [...prev, screen]);
-    setCurrentScreen(screen);
+
+    // Map screen aliases to proper URL paths
+    const routeMap = {
+      'landing': '/',
+      'welcome': '/',
+      'login': '/login',
+      'register': '/register',
+      'otp': '/otp',
+      'profile-setup': '/profile-setup',
+      'dashboard': '/home',
+      'home': '/home',
+      'symptoms': '/health-problem',
+      'health-problem': '/health-problem',
+      'triage': '/care-navigation',
+      'care-navigation': '/care-navigation',
+      'facilities': '/facilities',
+      'facility-details': '/facility-details',
+      'appointment': '/appointments',
+      'appointments': '/appointments',
+      'live-queue': '/queue',
+      'queue': '/queue',
+      'check-in': '/check-in',
+      'consultation': '/consultation',
+      'tests': '/tests-reports',
+      'tests-reports': '/tests-reports',
+      'referrals': '/referrals',
+      'medicines': '/medicines',
+      'medicine-reminders': '/medicine-reminder',
+      'medicine-reminder': '/medicine-reminder',
+      'care-plan': '/care-plan',
+      'journey': '/health-journey',
+      'health-journey': '/health-journey',
+      'follow-up': '/follow-up',
+      'alerts': '/notifications',
+      'notifications': '/notifications',
+      'account': '/account',
+      'emergency': '/emergency',
+      'health-worker': '/health-worker',
+      'facility-staff': '/facility-staff',
+      'admin': '/admin'
+    };
+
+    const targetUrl = routeMap[pathOrScreen] || (pathOrScreen.startsWith('/') ? pathOrScreen : `/${pathOrScreen}`);
+    navigate(targetUrl);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goBack = () => {
-    if (navigationHistory.length > 1) {
-      const newHistory = [...navigationHistory];
-      newHistory.pop();
-      const prevScreen = newHistory[newHistory.length - 1];
-      setNavigationHistory(newHistory);
-      setCurrentScreen(prevScreen);
-    } else {
-      setCurrentScreen('dashboard');
-    }
+    navigate(-1);
   };
 
   // Toast System
@@ -129,12 +180,10 @@ export const AppProvider = ({ children }) => {
     const newToast = { id, title, message, type, action };
     setToasts(prev => [newToast, ...prev.slice(0, 4)]);
 
-    // Auto dismiss after 4.5 seconds
     setTimeout(() => {
       removeToast(id);
     }, 4500);
 
-    // Audio chime
     playAudioChime(type);
   };
 
@@ -142,7 +191,7 @@ export const AppProvider = ({ children }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Web Audio Chime generator (No external audio files needed)
+  // Web Audio Chimes
   const playAudioChime = (type = 'info') => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -152,8 +201,8 @@ export const AppProvider = ({ children }) => {
       gain.connect(ctx.destination);
 
       if (type === 'success') {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.15, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
         osc.start();
@@ -166,16 +215,14 @@ export const AppProvider = ({ children }) => {
         osc.start();
         osc.stop(ctx.currentTime + 0.4);
       } else {
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
         osc.start();
         osc.stop(ctx.currentTime + 0.25);
       }
-    } catch (e) {
-      // Audio context might be restricted before interaction
-    }
+    } catch (e) {}
   };
 
   // Text-To-Speech Reader
@@ -193,6 +240,35 @@ export const AppProvider = ({ children }) => {
       window.speechSynthesis.speak(utterance);
       addToast('Screen Reader', 'Reading content aloud...', 'info');
     }
+  };
+
+  // Start Demo Journey with Arun Kumar
+  const startDemoJourney = () => {
+    setPatientData(initialPatientData);
+    setFacilities(mockFacilities);
+    setSelectedFacility(mockFacilities[0]);
+    setIsAuthenticated(true);
+    setUserRole('patient');
+    setDemoTourActive(true);
+    setDemoStep(1);
+    navigateTo('/home');
+    addToast('Demo Journey Started', 'Preloaded Arun Kumar (Fever for 3 days).', 'success');
+  };
+
+  // Login action
+  const loginUser = (mobileOrEmail) => {
+    setIsAuthenticated(true);
+    addToast('Login Successful', 'Welcome back to SwasthyaPath!', 'success');
+    navigateTo('/home');
+  };
+
+  // Logout action
+  const logoutUser = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('swasthya_auth');
+    setDemoTourActive(false);
+    navigateTo('/');
+    addToast('Logged Out Successfully', 'You have been safely logged out.', 'info');
   };
 
   // 1. Feature: Submit Health Symptoms
@@ -292,7 +368,7 @@ export const AppProvider = ({ children }) => {
   // 4. Feature: Advance Live Queue
   const advanceQueue = () => {
     setPatientData(prev => {
-      const currentPos = prev.appointment.queuePosition;
+      const currentPos = prev.appointment?.queuePosition || 8;
       if (currentPos <= 1) {
         playAudioChime('success');
         addToast('Your Turn!', 'Please proceed to OPD Room 4 for your consultation.', 'success');
@@ -337,7 +413,6 @@ export const AppProvider = ({ children }) => {
       const updatedPrescriptions = newPrescription ? [...prev.consultation.prescriptions, newPrescription] : prev.consultation.prescriptions;
       const updatedTests = orderedTests || prev.consultation.testsOrdered;
 
-      // Automatically sync new prescriptions into Medicine Reminders
       const updatedCarePlan = [
         {
           id: "cp-1",
@@ -482,7 +557,7 @@ export const AppProvider = ({ children }) => {
     addToast('Report Added Successfully', 'CBC report has been attached to your health journey.', 'success');
   };
 
-  // 7. Feature: Medicine Reminder Action (Taken / Skipped)
+  // 7. Feature: Medicine Reminder Action
   const updateMedicineReminder = (prescriptionId, reminderIndex, newStatus) => {
     setPatientData(prev => {
       const updatedRx = prev.consultation.prescriptions.map(rx => {
@@ -517,14 +592,14 @@ export const AppProvider = ({ children }) => {
   // 8. Feature: Progress Referral Lifecycle
   const progressReferralStage = () => {
     setPatientData(prev => {
-      const nextStage = Math.min(4, (prev.referral.currentStage || 0) + 1);
+      const nextStage = Math.min(4, (prev.referral?.currentStage || 0) + 1);
       const stageTitles = ["Created", "Notified", "Accepted", "Scheduled", "Completed"];
       const newStatus = stageTitles[nextStage];
 
-      const updatedStages = prev.referral.stages.map((s, idx) => ({
+      const updatedStages = prev.referral?.stages?.map((s, idx) => ({
         ...s,
         done: idx <= nextStage
-      }));
+      })) || [];
 
       addToast('Referral Updated', `Referral status advanced to "${newStatus}"`, 'success');
 
@@ -561,7 +636,7 @@ export const AppProvider = ({ children }) => {
     addToast('Follow-up Missed Alert Generated', 'Alert sent to patient and assigned ASHA worker.', 'warning');
   };
 
-  // Reset to default Arun Kumar state
+  // Reset demo data
   const resetDemoData = () => {
     setPatientData(initialPatientData);
     setFacilities(mockFacilities);
@@ -571,7 +646,6 @@ export const AppProvider = ({ children }) => {
     addToast('Demo Data Reset', 'Prototype restored to default Arun Kumar state.', 'info');
   };
 
-  // Translations helper
   const t = translations[language] || translations.en;
 
   const value = {
@@ -579,7 +653,7 @@ export const AppProvider = ({ children }) => {
     setIsAuthenticated,
     userRole,
     setUserRole,
-    currentScreen,
+    currentPath: location.pathname,
     navigateTo,
     goBack,
     language,
@@ -595,20 +669,14 @@ export const AppProvider = ({ children }) => {
     setNetworkStatus,
     patientData,
     setPatientData,
+    pendingRegData,
+    setPendingRegData,
     facilities,
     setFacilities,
     selectedFacility,
     setSelectedFacility,
     emergencyModalOpen,
     setEmergencyModalOpen,
-    authModalMode,
-    setAuthModalMode,
-    otpModalOpen,
-    setOtpModalOpen,
-    profileWizardOpen,
-    setProfileWizardOpen,
-    facilityDetailsModalOpen,
-    setFacilityDetailsModalOpen,
     toasts,
     addToast,
     removeToast,
@@ -618,6 +686,9 @@ export const AppProvider = ({ children }) => {
     setDemoTourActive,
     playAudioChime,
     speakText,
+    startDemoJourney,
+    loginUser,
+    logoutUser,
     submitSymptoms,
     bookAppointment,
     checkInPatient,

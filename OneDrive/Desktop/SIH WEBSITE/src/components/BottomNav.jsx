@@ -3,27 +3,27 @@ import { useApp } from '../context/AppContext';
 import { Home, Milestone, CalendarClock, Bell, User, ShieldAlert } from 'lucide-react';
 
 export const BottomNav = () => {
-  const { currentScreen, navigateTo, setEmergencyModalOpen, patientData } = useApp();
+  const { currentPath, navigateTo, setEmergencyModalOpen, patientData } = useApp();
   const unreadCount = patientData.alerts?.filter(a => !a.read).length || 0;
 
   const items = [
-    { id: 'dashboard', label: 'Home', icon: Home },
-    { id: 'journey', label: 'Journey', icon: Milestone },
-    { id: 'live-queue', label: 'Queue', icon: CalendarClock },
-    { id: 'alerts', label: 'Alerts', icon: Bell, badge: unreadCount },
-    { id: 'account', label: 'Account', icon: User }
+    { id: 'dashboard', path: '/home', label: 'Home', icon: Home },
+    { id: 'journey', path: '/health-journey', label: 'Journey', icon: Milestone },
+    { id: 'live-queue', path: '/queue', label: 'Queue', icon: CalendarClock },
+    { id: 'alerts', path: '/notifications', label: 'Alerts', icon: Bell, badge: unreadCount },
+    { id: 'account', path: '/account', label: 'Account', icon: User }
   ];
 
   return (
     <nav className="mobile-bottom-nav">
       {items.map(item => {
         const Icon = item.icon;
-        const isActive = currentScreen === item.id;
+        const isActive = currentPath === item.path || (item.id === 'dashboard' && currentPath === '/dashboard') || (item.id === 'live-queue' && (currentPath === '/live-queue' || currentPath === '/check-in'));
         return (
           <button
             key={item.id}
             className={`mobile-nav-item ${isActive ? 'active' : ''}`}
-            onClick={() => navigateTo(item.id)}
+            onClick={() => navigateTo(item.path)}
             style={{ position: 'relative' }}
           >
             <div style={{ position: 'relative' }}>

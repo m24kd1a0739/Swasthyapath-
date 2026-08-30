@@ -22,7 +22,7 @@ import {
 
 export const Sidebar = () => {
   const { 
-    currentScreen, 
+    currentPath, 
     navigateTo, 
     patientData, 
     resetDemoData, 
@@ -34,20 +34,20 @@ export const Sidebar = () => {
   } = useApp();
 
   const navItems = [
-    { id: 'dashboard', label: 'Home Dashboard', icon: Home },
-    { id: 'symptoms', label: 'Health Problem / Triage', icon: Stethoscope },
-    { id: 'facilities', label: 'Government Facilities', icon: Building2 },
-    { id: 'live-queue', label: 'Appointment & Queue', icon: CalendarClock },
-    { id: 'consultation', label: 'Doctor Consultation', icon: Activity },
-    { id: 'tests', label: 'Tests & Lab Reports', icon: FlaskConical },
-    { id: 'medicines', label: 'Medicine Availability', icon: Pill },
-    { id: 'medicine-reminders', label: 'Medicine Reminder', icon: BellRing },
-    { id: 'care-plan', label: 'My Care Plan', icon: CheckSquare },
-    { id: 'referrals', label: 'Referral Tracking', icon: Share2 },
-    { id: 'follow-up', label: 'Follow-up Management', icon: Calendar },
-    { id: 'journey', label: 'My Health Journey', icon: Milestone },
-    { id: 'alerts', label: 'Smart Health Alerts', icon: BellRing },
-    { id: 'account', label: 'Account & Caregiver', icon: UserCircle }
+    { id: 'dashboard', path: '/home', label: 'Home Dashboard', icon: Home },
+    { id: 'symptoms', path: '/health-problem', label: 'Health Problem / Triage', icon: Stethoscope },
+    { id: 'facilities', path: '/facilities', label: 'Government Facilities', icon: Building2 },
+    { id: 'live-queue', path: '/queue', label: 'Appointment & Queue', icon: CalendarClock },
+    { id: 'consultation', path: '/consultation', label: 'Doctor Consultation', icon: Activity },
+    { id: 'tests', path: '/tests-reports', label: 'Tests & Lab Reports', icon: FlaskConical },
+    { id: 'medicines', path: '/medicines', label: 'Medicine Availability', icon: Pill },
+    { id: 'medicine-reminders', path: '/medicine-reminder', label: 'Medicine Reminder', icon: BellRing },
+    { id: 'care-plan', path: '/care-plan', label: 'My Care Plan', icon: CheckSquare },
+    { id: 'referrals', path: '/referrals', label: 'Referral Tracking', icon: Share2 },
+    { id: 'follow-up', path: '/follow-up', label: 'Follow-up Management', icon: Calendar },
+    { id: 'journey', path: '/health-journey', label: 'My Health Journey', icon: Milestone },
+    { id: 'alerts', path: '/notifications', label: 'Smart Health Alerts', icon: BellRing },
+    { id: 'account', path: '/account', label: 'Account & Caregiver', icon: UserCircle }
   ];
 
   return (
@@ -105,13 +105,13 @@ export const Sidebar = () => {
 
         {navItems.map(item => {
           const Icon = item.icon;
-          const isActive = currentScreen === item.id;
+          const isActive = currentPath === item.path || (item.id === 'dashboard' && currentPath === '/dashboard') || (item.id === 'symptoms' && currentPath === '/symptoms') || (item.id === 'live-queue' && (currentPath === '/live-queue' || currentPath === '/check-in')) || (item.id === 'tests' && currentPath === '/tests') || (item.id === 'alerts' && currentPath === '/alerts');
           return (
             <button
               key={item.id}
               onClick={() => {
                 if (userRole !== 'patient') setUserRole('patient');
-                navigateTo(item.id);
+                navigateTo(item.path);
               }}
               style={{
                 width: '100%',
@@ -152,18 +152,18 @@ export const Sidebar = () => {
         </div>
 
         {[
-          { id: 'health-worker', label: 'ASHA Health Worker', role: 'health-worker', icon: Users },
-          { id: 'facility-staff', label: 'Hospital OPD & Lab Staff', role: 'facility-staff', icon: Building2 },
-          { id: 'admin', label: 'District Admin Officer', role: 'admin', icon: Activity }
+          { id: 'health-worker', path: '/health-worker', label: 'ASHA Health Worker', role: 'health-worker', icon: Users },
+          { id: 'facility-staff', path: '/facility-staff', label: 'Hospital OPD & Lab Staff', role: 'facility-staff', icon: Building2 },
+          { id: 'admin', path: '/admin', label: 'District Admin Officer', role: 'admin', icon: Activity }
         ].map(roleItem => {
           const Icon = roleItem.icon;
-          const isActive = currentScreen === roleItem.id;
+          const isActive = currentPath === roleItem.path;
           return (
             <button
               key={roleItem.id}
               onClick={() => {
                 setUserRole(roleItem.role);
-                navigateTo(roleItem.id);
+                navigateTo(roleItem.path);
               }}
               style={{
                 width: '100%',

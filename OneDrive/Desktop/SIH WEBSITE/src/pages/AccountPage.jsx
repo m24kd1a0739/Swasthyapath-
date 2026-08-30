@@ -33,7 +33,7 @@ export const AccountPage = () => {
     setFontSize, 
     networkStatus, 
     setNetworkStatus, 
-    setIsAuthenticated, 
+    logoutUser, 
     navigateTo, 
     addToast 
   } = useApp();
@@ -52,9 +52,7 @@ export const AccountPage = () => {
 
   const handleLogout = () => {
     setLogoutModalOpen(false);
-    setIsAuthenticated(false);
-    addToast('Logged Out Successfully', 'You have been safely logged out of SwasthyaPath.', 'info');
-    navigateTo('landing');
+    logoutUser();
   };
 
   const handleSaveCaregiver = (e) => {

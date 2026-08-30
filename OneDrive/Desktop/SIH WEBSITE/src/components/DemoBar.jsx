@@ -11,32 +11,33 @@ export const DemoBar = () => {
     navigateTo, 
     resetDemoData, 
     setUserRole,
+    setIsAuthenticated,
     addToast
   } = useApp();
 
   if (!demoTourActive) return null;
 
   const demoSteps = [
-    { step: 1, title: '1. Welcome Landing', screen: 'landing', role: 'patient', desc: 'Public healthcare platform overview & SIH entry' },
-    { step: 2, title: '2. Register & Auth', screen: 'landing', modal: 'register', role: 'patient', desc: 'Patient onboarding & ABHA registration' },
-    { step: 3, title: '3. OTP Verification', screen: 'landing', modal: 'otp', role: 'patient', desc: 'Secure 6-digit mobile OTP check' },
-    { step: 4, title: '4. Profile Wizard', screen: 'landing', modal: 'wizard', role: 'patient', desc: '3-step onboarding wizard' },
-    { step: 5, title: '5. Patient Dashboard', screen: 'dashboard', role: 'patient', desc: 'Unified patient status, queue, and alerts' },
-    { step: 6, title: '6. Symptom Input', screen: 'symptoms', role: 'patient', desc: 'Text, voice, and chip-based symptom input' },
-    { step: 7, title: '7. AI Care Navigation', screen: 'triage', role: 'patient', desc: 'Clinical triage, care level rationale & disclaimer' },
-    { step: 8, title: '8. Facility Finder', screen: 'facilities', role: 'patient', desc: 'Multi-factor smart ranking & interactive district map' },
-    { step: 9, title: '9. Facility Details', screen: 'facility-details', role: 'patient', desc: 'Doctors, tests, pharmacy stocks, and OPD timings' },
-    { step: 10, title: '10. Book Appointment', screen: 'appointment', role: 'patient', desc: 'Token generation (#A-08) & slot booking' },
-    { step: 11, title: '11. Check-In & Queue', screen: 'live-queue', role: 'patient', desc: 'Simulated QR check-in & OPD arrival' },
-    { step: 12, title: '12. Live Queue Advance', screen: 'live-queue', role: 'patient', desc: 'Live position updates (#08 -> #07 -> Your Turn)' },
-    { step: 13, title: '13. Doctor Consultation', screen: 'consultation', role: 'patient', desc: 'OPD physician assessment & clinical notes' },
-    { step: 14, title: '14. Lab Tests (CBC)', screen: 'tests', role: 'patient', desc: 'Diagnostic blood test request & center details' },
-    { step: 15, title: '15. Lab Report Viewer', screen: 'tests', role: 'patient', desc: 'Interactive blood report with normal range flags' },
-    { step: 16, title: '16. Pharmacy Stock', screen: 'medicines', role: 'patient', desc: 'Government pharmacy stock & generic search' },
-    { step: 17, title: '17. Medicine Reminder', screen: 'medicine-reminders', role: 'patient', desc: 'Prescription-linked schedule with 2 PM dose due' },
-    { step: 18, title: '18. My Care Plan', screen: 'care-plan', role: 'patient', desc: 'Dynamic "What should I do next?" checklist' },
-    { step: 19, title: '19. Referral Tracking', screen: 'referrals', role: 'patient', desc: 'End-to-end 5-stage referral lifecycle' },
-    { step: 20, title: '20. Health Worker & Admin', screen: 'health-worker', role: 'health-worker', desc: 'ASHA worker, OPD staff, and District Admin views' }
+    { step: 1, title: '1. Welcome Landing', path: '/', role: 'patient', desc: 'Public healthcare platform overview & SIH entry' },
+    { step: 2, title: '2. Citizen Login', path: '/login', role: 'patient', desc: 'Secure mobile / ABHA sign in' },
+    { step: 3, title: '3. Registration', path: '/register', role: 'patient', desc: 'Patient onboarding & demographic registration' },
+    { step: 4, title: '4. OTP Verification', path: '/otp', role: 'patient', desc: '6-digit mobile verification check' },
+    { step: 5, title: '5. Profile Wizard', path: '/profile-setup', role: 'patient', desc: '3-step onboarding wizard & preferences' },
+    { step: 6, title: '6. Patient Dashboard', path: '/home', role: 'patient', desc: 'Unified patient status, queue, and alerts' },
+    { step: 7, title: '7. Symptom Input', path: '/health-problem', role: 'patient', desc: 'Text, voice, and chip-based symptom input' },
+    { step: 8, title: '8. AI Care Navigation', path: '/care-navigation', role: 'patient', desc: 'Clinical triage, care level rationale & disclaimer' },
+    { step: 9, title: '9. Facility Finder', path: '/facilities', role: 'patient', desc: 'Multi-factor smart ranking & interactive district map' },
+    { step: 10, title: '10. Facility Details', path: '/facility-details', role: 'patient', desc: 'Doctors, tests, pharmacy stocks, and OPD timings' },
+    { step: 11, title: '11. Book Appointment', path: '/appointments', role: 'patient', desc: 'Token generation (#A-08) & slot booking' },
+    { step: 12, title: '12. Live Queue & Check-In', path: '/queue', role: 'patient', desc: 'Simulated QR check-in & live token advance (#08 -> Your Turn)' },
+    { step: 13, title: '13. Doctor Consultation', path: '/consultation', role: 'patient', desc: 'OPD physician assessment & clinical notes' },
+    { step: 14, title: '14. Lab Tests (CBC)', path: '/tests-reports', role: 'patient', desc: 'Diagnostic blood test request & report viewer' },
+    { step: 15, title: '15. Pharmacy Stock', path: '/medicines', role: 'patient', desc: 'Government pharmacy stock & generic search' },
+    { step: 16, title: '16. Medicine Reminder', path: '/medicine-reminder', role: 'patient', desc: 'Prescription-linked schedule with 2 PM dose due' },
+    { step: 17, title: '17. My Care Plan', path: '/care-plan', role: 'patient', desc: 'Dynamic "What should I do next?" checklist' },
+    { step: 18, title: '18. Referral Tracking', path: '/referrals', role: 'patient', desc: 'End-to-end 5-stage referral lifecycle' },
+    { step: 19, title: '19. Health Journey', path: '/health-journey', role: 'patient', desc: 'Complete longitudinal timeline' },
+    { step: 20, title: '20. Staff & Admin Roles', path: '/health-worker', role: 'health-worker', desc: 'ASHA worker, OPD staff, and District Admin views' }
   ];
 
   const currentStepData = demoSteps.find(s => s.step === demoStep) || demoSteps[0];
@@ -45,8 +46,11 @@ export const DemoBar = () => {
     const target = demoSteps.find(s => s.step === stepNum);
     if (!target) return;
     setDemoStep(stepNum);
+    if (stepNum >= 6) {
+      setIsAuthenticated(true);
+    }
     if (target.role) setUserRole(target.role);
-    navigateTo(target.screen);
+    navigateTo(target.path);
     addToast(`SIH Demo: Step ${stepNum}`, target.desc, 'info');
   };
 
