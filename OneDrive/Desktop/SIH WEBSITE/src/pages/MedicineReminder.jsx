@@ -20,6 +20,7 @@ import confetti from 'canvas-confetti';
 export const MedicineReminder = () => {
   const { 
     patientData, 
+    setPatientData,
     updateMedicineReminder, 
     navigateTo, 
     addToast, 
@@ -330,6 +331,29 @@ export const MedicineReminder = () => {
               <button 
                 className="btn btn-primary"
                 onClick={() => {
+                  if (!newMedName.trim()) return;
+                  const newMedObj = {
+                    id: `rx-custom-${Date.now()}`,
+                    medicineName: newMedName.trim(),
+                    dosage: '1 dose as prescribed',
+                    frequency: 'Daily',
+                    duration: '5 days',
+                    instructions: 'Take as directed.',
+                    status: 'Active',
+                    availableAtFacility: 'Jan Aushadhi Pharmacy',
+                    reminders: [
+                      { time: newMedTime || '09:00 PM', status: 'upcoming', label: 'Custom Dose' }
+                    ]
+                  };
+
+                  setPatientData(prev => ({
+                    ...prev,
+                    consultation: {
+                      ...prev.consultation,
+                      prescriptions: [...(prev.consultation?.prescriptions || []), newMedObj]
+                    }
+                  }));
+
                   setAddReminderModal(false);
                   addToast('Reminder Configured', `${newMedName} scheduled for ${newMedTime}.`, 'success');
                 }}

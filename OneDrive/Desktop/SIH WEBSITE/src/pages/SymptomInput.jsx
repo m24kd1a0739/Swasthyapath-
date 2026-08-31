@@ -3,11 +3,11 @@ import { useApp } from '../context/AppContext';
 import { Mic, MicOff, Sparkles, ArrowRight, ArrowLeft, Volume2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export const SymptomInput = () => {
-  const { t, navigateTo, submitSymptoms, addToast, playAudioChime } = useApp();
+  const { patientData, t, navigateTo, submitSymptoms, addToast, playAudioChime } = useApp();
 
-  const [symptomText, setSymptomText] = useState(patientData.symptoms?.text || '');
-  const [selectedChips, setSelectedChips] = useState(patientData.symptoms?.selectedChips || []);
-  const [duration, setDuration] = useState(patientData.symptoms?.duration || '3 days');
+  const [symptomText, setSymptomText] = useState(patientData?.symptoms?.text || '');
+  const [selectedChips, setSelectedChips] = useState(patientData?.symptoms?.selectedChips || []);
+  const [duration, setDuration] = useState(patientData?.symptoms?.duration || '3 days');
   const [isListening, setIsListening] = useState(false);
 
   const availableChips = [
@@ -87,7 +87,7 @@ export const SymptomInput = () => {
             <span>AI Clinical Care Navigation • Step 1</span>
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-            {t.symptomQuestion}
+            {t.symptomQuestion || "Tell us what health problem you are facing"}
           </h2>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
             Describe what you are experiencing in your own words, select common symptoms, or speak.
@@ -104,7 +104,7 @@ export const SymptomInput = () => {
             <textarea
               className="form-textarea"
               rows={3}
-              placeholder={t.symptomPlaceholder}
+              placeholder="Fever for 3 days with weakness..."
               value={symptomText}
               onChange={e => setSymptomText(e.target.value)}
               style={{ fontSize: '0.96rem', lineHeight: 1.5 }}
@@ -201,7 +201,12 @@ export const SymptomInput = () => {
           </div>
 
           {/* Submit CTA */}
-          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-lg" 
+            style={{ width: '100%', opacity: (!symptomText.trim() && selectedChips.length === 0) ? 0.6 : 1 }}
+            disabled={!symptomText.trim() && selectedChips.length === 0}
+          >
             <Sparkles size={18} />
             <span>Analyze & Navigate Care Options</span>
             <ArrowRight size={18} />

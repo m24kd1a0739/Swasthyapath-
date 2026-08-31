@@ -13,7 +13,8 @@ import {
   Download, 
   Sparkles,
   AlertCircle,
-  Share2
+  Share2,
+  Plus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -28,24 +29,17 @@ export const TestsAndReports = () => {
 
   const [isSimulatingUpload, setIsSimulatingUpload] = useState(false);
   const [selectedReportModal, setSelectedReportModal] = useState(false);
+  const [activeReportData, setActiveReportData] = useState(null);
 
-  const testOrder = patientData.consultation?.testsOrdered?.[0] || {
-    id: 'test-order-1',
-    testName: 'Complete Blood Count (CBC) with Platelets',
-    facility: 'District Hospital Central Diagnostics',
-    status: 'ready',
-    orderedDate: 'Today, 10:50 AM'
-  };
+  const testsList = patientData.consultation?.testsOrdered || [];
 
-  const isReady = testOrder.status === 'ready';
-
-  const handleSimulateLabProcessing = () => {
+  const handleSimulateLabProcessing = (testId) => {
     setIsSimulatingUpload(true);
-    addToast('Lab Sample Processing', 'District Diagnostic Centre analyzing blood sample...', 'info');
+    addToast('Lab Sample Processing', 'Diagnostic Centre analyzing blood sample...', 'info');
 
     setTimeout(() => {
       setIsSimulatingUpload(false);
-      uploadLabReport('test-order-1');
+      uploadLabReport(testId || 'all');
       playAudioChime('success');
       try {
         confetti({
@@ -55,6 +49,10 @@ export const TestsAndReports = () => {
         });
       } catch (e) {}
     }, 1200);
+  };
+
+  const handleAddSampleTest = () => {
+    uploadLabReport('test-order-1');
   };
 
   return (
@@ -85,103 +83,175 @@ export const TestsAndReports = () => {
               Diagnostic Tests & Lab Reports
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Prescribed by <strong>Dr. Priya Sharma</strong> • Connected to your ABHA Digital Health Record
+              Connected to your ABHA Digital Health Record: <strong>{patientData.profile?.abhaId}</strong>
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button 
               className="btn btn-secondary btn-sm"
-              onClick={handleSimulateLabProcessing}
+              onClick={() => handleSimulateLabProcessing('all')}
               disabled={isSimulatingUpload}
             >
               <Upload size={15} />
-              <span>{isSimulatingUpload ? 'Processing...' : 'Simulate Lab Report Upload'}</span>
+              <span>{isSimulatingUpload ? 'Processing...' : 'Upload / Process Lab Report'}</span>
             </button>
           </div>
         </div>
 
-        {/* Active Test Card */}
-        <div style={{
-          background: isReady ? 'var(--primary-surface)' : 'var(--bg-surface)',
-          border: `1.5px solid ${isReady ? 'var(--primary-border)' : 'var(--border-light)'}`,
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.4rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: 'var(--radius-md)',
-                background: isReady ? 'var(--primary)' : 'var(--border-medium)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <FlaskConical size={24} />
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                    {testOrder.testName}
-                  </h3>
-                  <span className={`badge ${isReady ? 'badge-success' : 'badge-warning'}`}>
-                    {isReady ? 'Report Ready ✓' : 'Sample Pending'}
-                  </span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
-                  Facility: <strong>District Hospital Diagnostic Centre</strong> • Cost: Free (Govt Scheme)
-                </p>
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ordered on</div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{testOrder.orderedDate}</div>
-            </div>
-          </div>
-
+        {/* Tests List or Empty State */}
+        {testsList.length === 0 ? (
           <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: 'var(--radius-md)',
-            padding: '0.85rem 1rem',
-            border: '1px solid var(--border-light)',
-            fontSize: '0.82rem',
-            color: 'var(--text-muted)',
-            marginBottom: '1rem'
+            background: 'var(--bg-surface)',
+            border: '2px dashed var(--border-medium)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2.5rem 1.5rem',
+            textAlign: 'center',
+            marginBottom: '1.5rem'
           }}>
-            Recommended Center: <strong>District Hospital Diagnostic Centre</strong> • Open today (08:00 AM - 04:00 PM) • Estimated wait: ~15 minutes
+            <div style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--primary-surface)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <FlaskConical size={26} />
+            </div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+              No Diagnostic Tests Currently Active
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '480px', margin: '0 auto 1.5rem', lineHeight: 1.45 }}>
+              Tests ordered during a doctor consultation or at a government diagnostic centre will automatically appear here.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigateTo('consultation')}
+              >
+                <span>Consult Doctor to Order Test</span>
+                <ArrowRight size={16} />
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={handleAddSampleTest}
+              >
+                <Plus size={16} />
+                <span>Request Routine CBC Blood Test</span>
+              </button>
+            </div>
           </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {testsList.map((testItem, idx) => {
+              const isReady = testItem.status === 'ready';
 
-          {/* Action Row */}
-          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-            <button 
-              className="btn btn-primary btn-sm"
-              onClick={() => setSelectedReportModal(true)}
-            >
-              <Eye size={15} />
-              <span>View Verified Digital Lab Report</span>
-            </button>
+              return (
+                <div 
+                  key={testItem.id || idx}
+                  style={{
+                    background: isReady ? 'var(--primary-surface)' : 'var(--bg-surface)',
+                    border: `1.5px solid ${isReady ? 'var(--primary-border)' : 'var(--border-light)'}`,
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '1.4rem',
+                    marginBottom: '0.5rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: 'var(--radius-md)',
+                        background: isReady ? 'var(--primary)' : 'var(--border-medium)',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <FlaskConical size={24} />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                            {testItem.testName}
+                          </h3>
+                          <span className={`badge ${isReady ? 'badge-success' : 'badge-warning'}`}>
+                            {isReady ? 'Report Ready ✓' : 'Sample Processing / Pending'}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>
+                          Facility: <strong>{testItem.facility || 'District Hospital Central Diagnostics'}</strong> • Cost: Free Under Govt Scheme
+                        </p>
+                      </div>
+                    </div>
 
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => addToast('PDF Downloaded', 'CBC Blood Report PDF downloaded to device.', 'info')}
-            >
-              <Download size={15} />
-              <span>Download Lab Slip</span>
-            </button>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ordered on</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{testItem.orderedDate || 'Today'}</div>
+                    </div>
+                  </div>
 
-            <button 
-              className="btn btn-secondary btn-sm"
-              onClick={() => navigateTo('medicines')}
-            >
-              <span>Check Medicine Stock →</span>
-            </button>
+                  <div style={{
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.85rem 1rem',
+                    border: '1px solid var(--border-light)',
+                    fontSize: '0.82rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '1rem'
+                  }}>
+                    Processing Center: <strong>{testItem.facility || 'District Hospital Diagnostic Centre'}</strong> • Open (08:00 AM - 04:00 PM) • Estimated wait: ~15 minutes
+                  </div>
+
+                  {/* Action Row */}
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    {isReady ? (
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          setActiveReportData(testItem);
+                          setSelectedReportModal(true);
+                        }}
+                      >
+                        <Eye size={15} />
+                        <span>View Verified Digital Lab Report</span>
+                      </button>
+                    ) : (
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleSimulateLabProcessing(testItem.id)}
+                        disabled={isSimulatingUpload}
+                      >
+                        <Upload size={15} />
+                        <span>{isSimulatingUpload ? 'Analyzing...' : 'Simulate Sample Analysis & Report'}</span>
+                      </button>
+                    )}
+
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => addToast('PDF Downloaded', `${testItem.testName} report PDF saved to device.`, 'info')}
+                    >
+                      <Download size={15} />
+                      <span>Download Lab Slip</span>
+                    </button>
+
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => navigateTo('medicines')}
+                    >
+                      <span>Check Medicine Stock →</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
 
         {/* Detailed Lab Report Viewer Modal / Container */}
         {selectedReportModal && (

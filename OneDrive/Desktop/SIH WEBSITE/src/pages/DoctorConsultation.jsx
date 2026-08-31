@@ -33,16 +33,91 @@ export const DoctorConsultation = () => {
     "Patient presents with 3-day history of moderate pyrexia, associated with generalized fatigue and body ache. Chest clear, vitals stable. Clinical assessment: Acute Febrile Illness (likely viral syndrome). Order baseline CBC and start antipyretics."
   );
 
-  const [prescribedMed, setPrescribedMed] = useState('Paracetamol 650mg');
-  const [dosageFrequency, setDosageFrequency] = useState('1 tab tid (8 AM, 2 PM, 8 PM) x 5 days');
-  const [testOrder, setTestOrder] = useState('Complete Blood Count (CBC) with Platelets');
+  const [prescriptionsList, setPrescriptionsList] = useState([
+    {
+      id: 'rx-1',
+      medicineName: 'Paracetamol 650mg',
+      dosage: '1 tablet after meals',
+      frequency: 'Thrice daily (8:00 AM, 2:00 PM, 8:00 PM)',
+      duration: '5 days',
+      instructions: 'Take with water after meals.'
+    },
+    {
+      id: 'rx-2',
+      medicineName: 'Oral Rehydration Salts (ORS)',
+      dosage: '1 sachet in 1 Litre boiled water',
+      frequency: 'Sip throughout the day',
+      duration: '3 days',
+      instructions: 'Maintain adequate hydration.'
+    }
+  ]);
+
+  const [testsList, setTestsList] = useState([
+    {
+      id: 'test-1',
+      testName: 'Complete Blood Count (CBC) with Platelets',
+      facility: 'District Hospital Central Diagnostics',
+      urgency: 'Standard OPD Lab'
+    }
+  ]);
+
+  const [newMedName, setNewMedName] = useState('');
+  const [newMedDosage, setNewMedDosage] = useState('');
+  const [newTestName, setNewTestName] = useState('');
+
   const [followUpDays, setFollowUpDays] = useState(7);
   const [createReferralStandby, setCreateReferralStandby] = useState(false);
+  const [referralDestination, setReferralDestination] = useState('District Government Hospital (Internal Medicine Unit)');
+  const [referralReason, setReferralReason] = useState('Specialist evaluation and secondary clinical review');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleAddMedicine = () => {
+    if (!newMedName.trim()) return;
+    setPrescriptionsList([
+      ...prescriptionsList,
+      {
+        id: `rx-${Date.now()}`,
+        medicineName: newMedName,
+        dosage: newMedDosage || '1 tablet after meals',
+        frequency: 'Twice daily',
+        duration: '5 days',
+        instructions: 'Take as directed by doctor.'
+      }
+    ]);
+    setNewMedName('');
+    setNewMedDosage('');
+  };
+
+  const handleRemoveMedicine = (id) => {
+    setPrescriptionsList(prescriptionsList.filter(m => m.id !== id));
+  };
+
+  const handleAddTest = () => {
+    if (!newTestName.trim()) return;
+    setTestsList([
+      ...testsList,
+      {
+        id: `test-${Date.now()}`,
+        testName: newTestName,
+        facility: 'District Hospital Diagnostic Centre',
+        urgency: 'Standard OPD Lab'
+      }
+    ]);
+    setNewTestName('');
+  };
+
+  const handleRemoveTest = (id) => {
+    setTestsList(testsList.filter(t => t.id !== id));
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
-    saveConsultation(assessmentNotes, null, null, followUpDays, createReferralStandby);
+    const referralInfo = createReferralStandby ? {
+      destinationFacility: referralDestination,
+      reason: referralReason
+    } : null;
+
+    saveConsultation(assessmentNotes, prescriptionsList, testsList, followUpDays, referralInfo);
     
     setSavedSuccess(true);
     playAudioChime('success');
@@ -54,7 +129,7 @@ export const DoctorConsultation = () => {
       });
     } catch (e) {}
     
-    addToast('Consultation Saved', 'Prescription, CBC lab order, care plan, and reminders updated.', 'success');
+    addToast('Consultation Saved', 'Prescription, lab order, care plan, and reminders updated.', 'success');
   };
 
   return (
@@ -162,87 +237,141 @@ export const DoctorConsultation = () => {
 
             {/* Section 2: Prescriptions */}
             <div style={{ marginBottom: '1.35rem' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                <Pill size={16} color="var(--primary)" />
-                <span>2. Prescribed Medicines (Auto-synced with Medicine Reminders & Pharmacy):</span>
-              </label>
-
-              <div style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.9rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem',
-                marginBottom: '0.5rem'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                    Tab. Paracetamol 650mg
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Dosage: 1 Tab TID (8:00 AM, 2:00 PM, 8:00 PM) after food x 5 days • Available at Govt Pharmacy Counter 2
-                  </div>
-                </div>
-                <span className="badge badge-success">In Stock at Facility</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                  <Pill size={16} color="var(--primary)" />
+                  <span>2. Prescribed Medicines ({prescriptionsList.length}):</span>
+                </label>
               </div>
 
-              <div style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.9rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                    Oral Rehydration Salts (ORS) Sachets
+              {prescriptionsList.map(med => (
+                <div key={med.id} style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.85rem 1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                      {med.medicineName}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Dosage: {med.dosage} • {med.frequency} • {med.duration}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Dosage: 1 sachet in 1 Litre boiled water daily x 3 days • Hydration Support
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="badge badge-success">In Stock</span>
+                    <button 
+                      type="button" 
+                      className="btn-icon" 
+                      style={{ color: 'var(--danger)', padding: '0.2rem' }}
+                      onClick={() => handleRemoveMedicine(med.id)}
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </div>
                 </div>
-                <span className="badge badge-success">Free Jan Aushadhi</span>
+              ))}
+
+              {/* Add New Medicine Input Row */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <input 
+                  type="text"
+                  className="form-input"
+                  placeholder="Medicine name (e.g. Paracetamol 650mg, ORS, Cetirizine)"
+                  value={newMedName}
+                  onChange={e => setNewMedName(e.target.value)}
+                  style={{ flex: '1 1 220px', fontSize: '0.86rem' }}
+                />
+                <input 
+                  type="text"
+                  className="form-input"
+                  placeholder="Dosage (e.g. 1 tab after meals x 5 days)"
+                  value={newMedDosage}
+                  onChange={e => setNewMedDosage(e.target.value)}
+                  style={{ flex: '1 1 180px', fontSize: '0.86rem' }}
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleAddMedicine}
+                  disabled={!newMedName.trim()}
+                >
+                  <Plus size={14} />
+                  <span>Add Medicine</span>
+                </button>
               </div>
             </div>
 
             {/* Section 3: Diagnostic Tests Order */}
             <div style={{ marginBottom: '1.35rem' }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                <FlaskConical size={16} color="var(--primary)" />
-                <span>3. Diagnostic Laboratory Investigation Order:</span>
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                  <FlaskConical size={16} color="var(--primary)" />
+                  <span>3. Diagnostic Laboratory Investigations ({testsList.length}):</span>
+                </label>
+              </div>
 
-              <div style={{
-                background: 'var(--primary-surface)',
-                border: '1.5px solid var(--primary-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.9rem 1.1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--primary-text)' }}>
-                    Complete Blood Count (CBC) with Platelet Count
+              {testsList.map(tst => (
+                <div key={tst.id} style={{
+                  background: 'var(--primary-surface)',
+                  border: '1.5px solid var(--primary-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.85rem 1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.5rem'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--primary-text)' }}>
+                      {tst.testName}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Facility: {tst.facility || 'District Hospital Central Diagnostics'} • {tst.urgency || 'Standard OPD Lab'}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Facility: District Hospital Diagnostic Center • Processing Time: ~15 mins • Free under Govt Scheme
-                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-icon" 
+                    style={{ color: 'var(--danger)', padding: '0.2rem' }}
+                    onClick={() => handleRemoveTest(tst.id)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
-                <span className="badge badge-primary">Standard OPD Lab</span>
+              ))}
+
+              {/* Add New Test Input Row */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <input 
+                  type="text"
+                  className="form-input"
+                  placeholder="Test name (e.g. Complete Blood Count, Widal, Dengue NS1, Urine Routine)"
+                  value={newTestName}
+                  onChange={e => setNewTestName(e.target.value)}
+                  style={{ flex: 1, fontSize: '0.86rem' }}
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleAddTest}
+                  disabled={!newTestName.trim()}
+                >
+                  <Plus size={14} />
+                  <span>Add Test</span>
+                </button>
               </div>
             </div>
 
             {/* Section 4: Follow-up & Standby Referral */}
-            <div className="grid-2" style={{ marginBottom: '1.75rem' }}>
+            <div className="grid-2" style={{ marginBottom: '1.25rem' }}>
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Calendar size={15} color="var(--primary)" />
@@ -253,27 +382,63 @@ export const DoctorConsultation = () => {
                   value={followUpDays}
                   onChange={e => setFollowUpDays(Number(e.target.value))}
                 >
-                  <option value={3}>3 Days (Sep 2, 2026)</option>
-                  <option value={7}>7 Days (Sep 4, 2026 - Recommended)</option>
-                  <option value={14}>14 Days (Sep 11, 2026)</option>
+                  <option value={3}>3 Days Review</option>
+                  <option value={7}>7 Days Review (Standard)</option>
+                  <option value={14}>14 Days Review</option>
+                  <option value={0}>No follow-up required</option>
                 </select>
               </div>
 
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <Share2 size={15} color="var(--primary)" />
-                  <span>5. Referral Standby</span>
+                  <span>5. Inter-Facility Referral</span>
                 </label>
                 <select 
                   className="form-select"
                   value={createReferralStandby ? 'yes' : 'no'}
                   onChange={e => setCreateReferralStandby(e.target.value === 'yes')}
                 >
-                  <option value="no">Routine Secondary OPD (No referral required)</option>
-                  <option value="yes">Tertiary Specialist Standby (AIIMS / Medical College)</option>
+                  <option value="no">No Referral Required (Treated at this facility)</option>
+                  <option value="yes">Create Inter-Facility Referral Token</option>
                 </select>
               </div>
             </div>
+
+            {/* Referral details fields if selected */}
+            {createReferralStandby && (
+              <div style={{
+                background: 'var(--purple-surface)',
+                border: '1.5px solid var(--purple-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1rem 1.15rem',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--purple-text)', marginBottom: '0.65rem' }}>
+                  Referral Destination & Clinical Rationale
+                </div>
+                <div className="grid-2">
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Destination Facility</label>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      value={referralDestination}
+                      onChange={e => setReferralDestination(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Clinical Reason</label>
+                    <input 
+                      type="text"
+                      className="form-input"
+                      value={referralReason}
+                      onChange={e => setReferralReason(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Save CTA */}
             <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>

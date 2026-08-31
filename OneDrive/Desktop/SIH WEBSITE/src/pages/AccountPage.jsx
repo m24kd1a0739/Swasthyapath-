@@ -40,11 +40,20 @@ export const AccountPage = () => {
 
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [addCaregiverModal, setAddCaregiverModal] = useState(false);
+  const [editProfileModal, setEditProfileModal] = useState(false);
+
+  const [profileForm, setProfileForm] = useState({
+    fullName: patientData.profile?.fullName || '',
+    mobile: patientData.profile?.mobile || '',
+    dob: patientData.profile?.dob || '',
+    gender: patientData.profile?.gender || 'Male',
+    location: patientData.profile?.location || ''
+  });
 
   const [caregiverForm, setCaregiverForm] = useState({
-    name: 'Sunita Kumar',
-    relation: 'Spouse',
-    phone: '+91 98765 43211',
+    name: patientData.caregiver?.name || 'Sunita Kumar',
+    relation: patientData.caregiver?.relation || 'Spouse',
+    phone: patientData.caregiver?.phone || '+91 98765 43211',
     shareAppt: true,
     shareEmergency: true,
     shareUpdates: true
@@ -53,6 +62,32 @@ export const AccountPage = () => {
   const handleLogout = () => {
     setLogoutModalOpen(false);
     logoutUser();
+  };
+
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    if (!profileForm.fullName.trim()) {
+      addToast('Validation Error', 'Full Name cannot be empty.', 'warning');
+      return;
+    }
+
+    const calculatedAge = profileForm.dob ? Math.max(1, new Date().getFullYear() - new Date(profileForm.dob).getFullYear()) : (patientData.profile?.age || 28);
+
+    setPatientData(prev => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        fullName: profileForm.fullName.trim(),
+        mobile: profileForm.mobile.trim(),
+        dob: profileForm.dob,
+        age: calculatedAge,
+        gender: profileForm.gender,
+        location: profileForm.location.trim()
+      }
+    }));
+
+    setEditProfileModal(false);
+    addToast('Profile Updated', `Name updated to ${profileForm.fullName.trim()}.`, 'success');
   };
 
   const handleSaveCaregiver = (e) => {
@@ -98,29 +133,47 @@ export const AccountPage = () => {
       <div className="card" style={{ padding: '2rem' }}>
         
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--primary)',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '1.4rem'
-          }}>
-            {initials}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--primary)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '1.4rem'
+            }}>
+              {initials}
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+                {fullName}
+              </h2>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                ABHA ID: <strong>{patientData.profile.abhaId}</strong> • Mobile: <strong>{patientData.profile.mobile || '+91 98765 43210'}</strong>
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-              {fullName}
-            </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              ABHA ID: <strong>{patientData.profile.abhaId}</strong> • Mobile: <strong>{patientData.profile.mobile || '+91 98765 43210'}</strong>
-            </p>
-          </div>
+
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              setProfileForm({
+                fullName: patientData.profile?.fullName || '',
+                mobile: patientData.profile?.mobile || '',
+                dob: patientData.profile?.dob || '',
+                gender: patientData.profile?.gender || 'Male',
+                location: patientData.profile?.location || ''
+              });
+              setEditProfileModal(true);
+            }}
+          >
+            <span>Edit Profile</span>
+          </button>
         </div>
 
         {/* Section 1: Personal Details */}
@@ -392,6 +445,84 @@ export const AccountPage = () => {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setAddCaregiverModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Save Permissions</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {editProfileModal && (
+        <div className="modal-overlay" onClick={() => setEditProfileModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Edit Patient Profile</h3>
+              <button className="btn-icon" onClick={() => setEditProfileModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleSaveProfile}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Full Name *</label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={profileForm.fullName}
+                    onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Mobile Number</label>
+                    <input 
+                      type="tel" 
+                      className="form-input"
+                      value={profileForm.mobile}
+                      onChange={e => setProfileForm({ ...profileForm, mobile: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Date of Birth</label>
+                    <input 
+                      type="date" 
+                      className="form-input"
+                      value={profileForm.dob}
+                      onChange={e => setProfileForm({ ...profileForm, dob: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Gender</label>
+                    <select 
+                      className="form-select"
+                      value={profileForm.gender}
+                      onChange={e => setProfileForm({ ...profileForm, gender: e.target.value })}
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Location / District</label>
+                    <input 
+                      type="text" 
+                      className="form-input"
+                      value={profileForm.location}
+                      onChange={e => setProfileForm({ ...profileForm, location: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setEditProfileModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Profile Changes</button>
               </div>
             </form>
           </div>

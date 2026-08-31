@@ -294,7 +294,7 @@ export const DashboardHome = () => {
         {/* Card A: Live Queue & Appointments */}
         <div 
           className="card card-interactive"
-          onClick={() => navigateTo('live-queue')}
+          onClick={() => navigateTo(hasAppt ? 'live-queue' : 'facilities')}
           style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
         >
           <div>
@@ -302,46 +302,61 @@ export const DashboardHome = () => {
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 LIVE OPD QUEUE
               </span>
-              <span className="badge badge-warning">
-                Token #{patientData.appointment?.tokenNumber || 'A-08'}
+              <span className={`badge ${hasAppt ? 'badge-warning' : 'badge-neutral'}`}>
+                {hasAppt ? `Token #${patientData.appointment.tokenNumber}` : 'No Active Token'}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.2rem 0' }}>
-              <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1 }}>
-                #{queuePos < 10 ? `0${queuePos}` : queuePos}
-              </span>
-              <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                (~{estWait} min wait)
-              </span>
-            </div>
+            {hasAppt ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.2rem 0' }}>
+                  <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1 }}>
+                    #{queuePos < 10 ? `0${queuePos}` : queuePos}
+                  </span>
+                  <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    (~{estWait} min wait)
+                  </span>
+                </div>
 
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
-              {patientData.appointment?.facilityName || 'District Govt Hospital'} • Room 4
-            </p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+                  {patientData.appointment?.facilityName || 'District Govt Hospital'} • {patientData.appointment?.room || 'Room 4'}
+                </p>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.2rem 0' }}>
+                  No Active Queue Token
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
+                  Find a government facility and book an OPD appointment to join live queue.
+                </p>
+              </>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.65rem' }}>
             <span style={{ color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 700 }}>
-              Track live queue →
+              {hasAppt ? 'Track live queue →' : 'Book OPD appointment →'}
             </span>
-            <button 
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                advanceQueue();
-              }}
-            >
-              Advance Token
-            </button>
+            {hasAppt && (
+              <button 
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  advanceQueue();
+                }}
+              >
+                Advance Token
+              </button>
+            )}
           </div>
         </div>
 
         {/* Card B: Medicine Schedule Due */}
         <div 
           className="card card-interactive"
-          onClick={() => navigateTo('medicine-reminders')}
+          onClick={() => navigateTo(activeRx ? 'medicine-reminders' : 'medicines')}
           style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
         >
           <div>
@@ -349,48 +364,66 @@ export const DashboardHome = () => {
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 MEDICINE SCHEDULE
               </span>
-              <span className={`badge ${afternoonDose.status === 'taken' ? 'badge-success' : 'badge-danger'}`}>
-                {afternoonDose.status === 'taken' ? 'Taken ✓' : 'Due Now (2 PM)'}
+              <span className={`badge ${!activeRx ? 'badge-neutral' : afternoonDose.status === 'taken' ? 'badge-success' : 'badge-danger'}`}>
+                {!activeRx ? 'No Active Rx' : afternoonDose.status === 'taken' ? 'Taken ✓' : 'Due Now (2 PM)'}
               </span>
             </div>
 
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.2rem 0' }}>
-              {activeRx?.medicineName || 'Paracetamol 650mg'}
-            </div>
-
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              1 Tablet after food • Afternoon dose
-            </p>
+            {activeRx ? (
+              <>
+                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.2rem 0' }}>
+                  {activeRx.medicineName}
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  {activeRx.dosage || '1 Tablet after food'} • {activeRx.frequency || 'Afternoon dose'}
+                </p>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.2rem 0' }}>
+                  No Prescriptions Active
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Prescribed medicines and adherence reminders from consultations will appear here.
+                </p>
+              </>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.65rem' }}>
-            {afternoonDose.status !== 'taken' ? (
-              <>
-                <button 
-                  className="btn btn-primary btn-sm"
-                  style={{ flex: 1, padding: '0.35rem 0.6rem', fontSize: '0.76rem' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateMedicineReminder('rx-1', 1, 'taken');
-                  }}
-                >
-                  <CheckCircle2 size={13} />
-                  <span>Mark Taken</span>
-                </button>
-                <button 
-                  className="btn btn-secondary btn-sm"
-                  style={{ padding: '0.35rem 0.5rem', fontSize: '0.76rem' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateMedicineReminder('rx-1', 1, 'skipped');
-                  }}
-                >
-                  Skip
-                </button>
-              </>
+            {activeRx ? (
+              afternoonDose.status !== 'taken' ? (
+                <>
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    style={{ flex: 1, padding: '0.35rem 0.6rem', fontSize: '0.76rem' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateMedicineReminder(activeRx.id || 'rx-1', 1, 'taken');
+                    }}
+                  >
+                    <CheckCircle2 size={13} />
+                    <span>Mark Taken</span>
+                  </button>
+                  <button 
+                    className="btn btn-secondary btn-sm"
+                    style={{ padding: '0.35rem 0.5rem', fontSize: '0.76rem' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateMedicineReminder(activeRx.id || 'rx-1', 1, 'skipped');
+                    }}
+                  >
+                    Skip
+                  </button>
+                </>
+              ) : (
+                <span style={{ color: 'var(--success-text)', fontSize: '0.78rem', fontWeight: 700 }}>
+                  Next Dose Scheduled →
+                </span>
+              )
             ) : (
-              <span style={{ color: 'var(--success-text)', fontSize: '0.78rem', fontWeight: 700 }}>
-                Next: 8:00 PM Night Dose →
+              <span style={{ color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 700 }}>
+                Check Govt Pharmacy Stocks →
               </span>
             )}
           </div>
@@ -399,30 +432,38 @@ export const DashboardHome = () => {
         {/* Card C: Care Continuity & Follow-Up */}
         <div 
           className="card card-interactive"
-          onClick={() => navigateTo(hasTransfer ? 'care-transfer' : 'follow-up')}
+          onClick={() => navigateTo(hasTransfer ? 'care-transfer' : patientData.consultation?.followUpDate ? 'follow-up' : 'care-transfer')}
           style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {hasTransfer ? 'CARE TRANSFER' : 'UPCOMING REVIEW'}
+                {hasTransfer ? 'CARE TRANSFER' : patientData.consultation?.followUpDate ? 'UPCOMING REVIEW' : 'CARE CONTINUITY'}
               </span>
-              <span className={`badge ${hasTransfer ? 'badge-primary' : 'badge-purple'}`}>
-                {hasTransfer ? 'Transfer Active' : 'Sep 4, 2026'}
+              <span className={`badge ${hasTransfer ? 'badge-primary' : patientData.consultation?.followUpDate ? 'badge-purple' : 'badge-neutral'}`}>
+                {hasTransfer ? 'Transfer Active' : patientData.consultation?.followUpDate || 'Ready'}
               </span>
             </div>
 
             <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: '0.2rem 0' }}>
-              {hasTransfer ? 'District Hospital' : 'General Medicine Review'}
+              {hasTransfer 
+                ? (patientData.careTransfer.destinationFacilityName || 'District Hospital') 
+                : patientData.consultation?.followUpDate 
+                ? 'General Medicine Review' 
+                : 'Inter-Facility Transfer Ready'}
             </div>
 
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-              {hasTransfer ? '5 health records shared with clinical consent' : 'Follow-up with Dr. Priya Sharma in 5 days'}
+              {hasTransfer 
+                ? 'Health records shared with clinical consent' 
+                : patientData.consultation?.followUpDate 
+                ? `Follow-up with ${patientData.consultation.doctorName || 'Doctor'} in ${patientData.consultation.followUpDays || 7} days`
+                : 'Transfer medical history and active care between government hospitals'}
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 700, marginTop: '1rem', borderTop: '1px solid var(--border-light)', paddingTop: '0.65rem' }}>
-            <span>{hasTransfer ? 'View transfer status' : 'Manage review'}</span>
+            <span>{hasTransfer ? 'View transfer status' : patientData.consultation?.followUpDate ? 'Manage review' : 'Continue care at another facility'}</span>
             <ChevronRight size={14} />
           </div>
         </div>

@@ -74,67 +74,117 @@ export const CarePlan = () => {
           </button>
         </div>
 
-        {/* SECTION 1: CURRENT ACTIVE ACTION ITEMS (What should I do next?) */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-            <span className="badge badge-danger" style={{ fontWeight: 800, padding: '0.3rem 0.7rem' }}>
-              DO THIS NOW (CURRENT)
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Immediate attention required</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {currentItems.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  background: 'linear-gradient(135deg, #FEF2F2 0%, #FFFBEB 100%)',
-                  border: '2px solid #FECACA',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '0.75rem',
-                  boxShadow: 'var(--shadow-sm)'
-                }}
+        {/* Empty State if No Care Plan Items Exist */}
+        {items.length === 0 ? (
+          <div style={{
+            background: 'var(--bg-surface)',
+            border: '2px dashed var(--border-medium)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2.5rem 1.5rem',
+            textAlign: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--primary-surface)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem'
+            }}>
+              <CheckSquare size={26} />
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+              Welcome to Your Care Plan
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+              Your customized clinical steps, medicine reminders, and follow-ups will populate automatically as you navigate your healthcare journey.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button 
+                className="btn btn-primary btn-lg"
+                onClick={() => navigateTo('symptoms')}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: 'var(--radius-full)',
-                    background: 'var(--danger)',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Pill size={22} />
-                  </div>
-                  <div>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--dark-navy)' }}>
-                      {item.title}
-                    </h4>
-                    <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', marginTop: '0.2rem', lineHeight: 1.4 }}>
-                      {item.desc}
-                    </p>
-                  </div>
+                <Sparkles size={18} />
+                <span>Start: Check Health Problem</span>
+                <ArrowRight size={18} />
+              </button>
+              <button 
+                className="btn btn-secondary btn-lg"
+                onClick={() => navigateTo('facilities')}
+              >
+                <span>Find Government Hospitals</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* SECTION 1: CURRENT ACTIVE ACTION ITEMS (What should I do next?) */}
+            {currentItems.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                  <span className="badge badge-danger" style={{ fontWeight: 800, padding: '0.3rem 0.7rem' }}>
+                    DO THIS NOW (CURRENT)
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Immediate attention required</span>
                 </div>
 
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => navigateTo(item.targetScreen)}
-                >
-                  <span>{item.actionText || 'Take Action'}</span>
-                  <ArrowRight size={16} />
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {currentItems.map(item => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: 'linear-gradient(135deg, #FEF2F2 0%, #FFFBEB 100%)',
+                        border: '2px solid #FECACA',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '1.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                        <div style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--danger)',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <Pill size={22} />
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--dark-navy)' }}>
+                            {item.title}
+                          </h4>
+                          <p style={{ fontSize: '0.84rem', color: 'var(--text-main)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                            {item.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => navigateTo(item.targetScreen)}
+                      >
+                        <span>{item.actionText || 'Take Action'}</span>
+                        <ArrowRight size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+            )}
 
         {/* SECTION 2: UPCOMING SCHEDULED ACTIONS */}
         <div style={{ marginBottom: '2rem' }}>
@@ -220,6 +270,8 @@ export const CarePlan = () => {
             ))}
           </div>
         </div>
+        </>
+      )}
 
       </div>
     </div>

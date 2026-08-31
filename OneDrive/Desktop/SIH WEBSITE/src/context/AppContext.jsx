@@ -538,100 +538,165 @@ export const AppProvider = ({ children }) => {
   };
 
   // 9. Feature: Doctor Consultation Save
-  const saveConsultation = (updatedNotes, newPrescription, orderedTests, followUpDays = 7, createReferral = false) => {
+  const saveConsultation = (updatedNotes, customPrescriptions = null, customTests = null, followUpDays = 7, referralInfo = null) => {
     const followUpDate = new Date();
-    followUpDate.setDate(followUpDate.getDate() + followUpDays);
+    followUpDate.setDate(followUpDate.getDate() + (followUpDays || 7));
     const dateStr = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     setPatientData(prev => {
-      const defaultRx = [
-        {
-          id: "rx-1",
-          medicineName: "Paracetamol 650mg",
-          type: "Tablet",
-          dosage: "1 tablet after meals",
-          frequency: "Thrice daily (8:00 AM, 2:00 PM, 8:00 PM)",
-          duration: "5 days",
-          instructions: "Take with water. Do not exceed 4g in 24 hours.",
-          status: "Active",
-          availableAtFacility: "District Hospital Pharmacy (Counter 2)",
-          reminders: [
-            { time: "08:00 AM", status: "taken", label: "Morning Dose" },
-            { time: "02:00 PM", status: "due", label: "Afternoon Dose" },
-            { time: "08:00 PM", status: "upcoming", label: "Night Dose" }
-          ]
-        },
-        {
-          id: "rx-2",
-          medicineName: "Oral Rehydration Salts (ORS)",
-          type: "Powder / Sachet",
-          dosage: "1 sachet in 1 Litre water",
-          frequency: "Sip throughout the day",
-          duration: "3 days",
-          instructions: "Maintain hydration.",
-          status: "Active",
-          availableAtFacility: "Free Govt Jan Aushadhi Counter",
-          reminders: [
-            { time: "11:00 AM", status: "taken", label: "Morning Hydration" },
-            { time: "04:00 PM", status: "upcoming", label: "Evening Hydration" }
-          ]
-        }
-      ];
+      // Formulate prescriptions with reminders
+      const prescriptionsToSave = customPrescriptions && customPrescriptions.length > 0 
+        ? customPrescriptions.map((med, idx) => ({
+            id: med.id || `rx-${Date.now()}-${idx}`,
+            medicineName: med.medicineName || med.name || 'Paracetamol 650mg',
+            type: med.type || 'Tablet',
+            dosage: med.dosage || '1 tablet after meals',
+            frequency: med.frequency || 'Thrice daily (8:00 AM, 2:00 PM, 8:00 PM)',
+            duration: med.duration || '5 days',
+            instructions: med.instructions || 'Take with water after meals.',
+            status: 'Active',
+            availableAtFacility: med.availableAtFacility || 'District Hospital Pharmacy (Counter 2)',
+            reminders: med.reminders || [
+              { time: '08:00 AM', status: 'taken', label: 'Morning Dose' },
+              { time: '02:00 PM', status: 'due', label: 'Afternoon Dose' },
+              { time: '08:00 PM', status: 'upcoming', label: 'Night Dose' }
+            ]
+          }))
+        : (prev.consultation?.prescriptions?.length ? prev.consultation.prescriptions : [
+            {
+              id: "rx-1",
+              medicineName: "Paracetamol 650mg",
+              type: "Tablet",
+              dosage: "1 tablet after meals",
+              frequency: "Thrice daily (8:00 AM, 2:00 PM, 8:00 PM)",
+              duration: "5 days",
+              instructions: "Take with water. Do not exceed 4g in 24 hours.",
+              status: "Active",
+              availableAtFacility: "District Hospital Pharmacy (Counter 2)",
+              reminders: [
+                { time: "08:00 AM", status: "taken", label: "Morning Dose" },
+                { time: "02:00 PM", status: "due", label: "Afternoon Dose" },
+                { time: "08:00 PM", status: "upcoming", label: "Night Dose" }
+              ]
+            }
+          ]);
 
-      const defaultTests = [
-        {
-          id: "test-order-1",
-          testName: "Complete Blood Count (CBC) with Platelets",
-          facility: "District Hospital Central Diagnostics",
-          urgency: "Standard OPD Lab",
-          status: "ready",
-          orderedDate: "Today, Processed",
-          results: {
-            hemoglobin: { value: "14.2", unit: "g/dL", range: "13.0 - 17.0", status: "Normal" },
-            wbc: { value: "6,400", unit: "/µL", range: "4,000 - 11,000", status: "Normal" },
-            platelets: { value: "185,000", unit: "/µL", range: "150,000 - 450,000", status: "Normal" }
-          },
-          doctorNotes: "Parameters within normal limits. Platelets safe at 185k. Continue symptomatic management."
-        }
-      ];
+      // Formulate diagnostic tests
+      const testsToSave = customTests && customTests.length > 0
+        ? customTests.map((t, idx) => ({
+            id: t.id || `test-order-${Date.now()}-${idx}`,
+            testName: t.testName || t.name || 'Complete Blood Count (CBC) with Platelets',
+            facility: t.facility || 'District Hospital Central Diagnostics',
+            urgency: t.urgency || 'Standard OPD Lab',
+            status: t.status || 'pending',
+            orderedDate: 'Today, Just now',
+            results: t.results || {
+              hemoglobin: { value: '14.2', unit: 'g/dL', range: '13.0 - 17.0', status: 'Normal' },
+              wbc: { value: '6,400', unit: '/µL', range: '4,000 - 11,000', status: 'Normal' },
+              platelets: { value: '185,000', unit: '/µL', range: '150,000 - 450,000', status: 'Normal' }
+            },
+            doctorNotes: t.doctorNotes || 'Parameters within normal limits. Platelets safe at 185k.'
+          }))
+        : (prev.consultation?.testsOrdered?.length ? prev.consultation.testsOrdered : [
+            {
+              id: "test-order-1",
+              testName: "Complete Blood Count (CBC) with Platelets",
+              facility: "District Hospital Central Diagnostics",
+              urgency: "Standard OPD Lab",
+              status: "ready",
+              orderedDate: "Today, Processed",
+              results: {
+                hemoglobin: { value: "14.2", unit: "g/dL", range: "13.0 - 17.0", status: "Normal" },
+                wbc: { value: "6,400", unit: "/µL", range: "4,000 - 11,000", status: "Normal" },
+                platelets: { value: "185,000", unit: "/µL", range: "150,000 - 450,000", status: "Normal" }
+              },
+              doctorNotes: "Parameters within normal limits. Platelets safe at 185k. Continue symptomatic management."
+            }
+          ]);
 
-      const updatedPrescriptions = newPrescription ? [...(prev.consultation?.prescriptions || []), newPrescription] : (prev.consultation?.prescriptions?.length ? prev.consultation.prescriptions : defaultRx);
-      const updatedTests = orderedTests || (prev.consultation?.testsOrdered?.length ? prev.consultation.testsOrdered : defaultTests);
+      // Formulate Referral if requested
+      let referralToSave = prev.referral;
+      if (referralInfo === true || (referralInfo && typeof referralInfo === 'object')) {
+        const refId = typeof referralInfo === 'object' && referralInfo.referralId ? referralInfo.referralId : `REF-MP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        const destFac = typeof referralInfo === 'object' && referralInfo.destinationFacility ? referralInfo.destinationFacility : 'District Government Hospital (Internal Medicine Unit)';
+        referralToSave = {
+          hasReferral: true,
+          referralId: refId,
+          sourceFacility: prev.appointment?.facilityName || 'PHC Kolar / District OPD',
+          destinationFacility: destFac,
+          referredBy: 'Dr. Priya Sharma',
+          reason: typeof referralInfo === 'object' && referralInfo.reason ? referralInfo.reason : 'Diagnostic evaluation with specialist physician review',
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          currentStage: 1,
+          stages: [
+            { stage: 0, title: 'PHC Initial Review', date: 'Today', done: true },
+            { stage: 1, title: 'Referral Created', date: 'Today, Just now', done: true },
+            { stage: 2, title: 'Specialist Hospital Notified', date: 'Pending Confirmation', done: false },
+            { stage: 3, title: 'Referral Accepted & Scheduled', date: 'Pending', done: false },
+            { stage: 4, title: 'Specialist Follow-up Done', date: 'Pending', done: false }
+          ],
+          status: 'Created & Notified'
+        };
+      }
 
-      const updatedCarePlan = [
+      // Build dynamic Care Plan based on actual items
+      const dynamicCarePlan = [
         {
           id: "cp-1",
           title: "Doctor Consultation Completed",
-          desc: "Consulted with Dr. Priya Sharma at District Government Hospital (OPD Room 4)",
+          desc: `Consulted with Dr. Priya Sharma at ${prev.appointment?.facilityName || 'District Government Hospital'}`,
           status: "completed",
           targetScreen: "consultation",
           date: "Today, Just now"
-        },
-        {
+        }
+      ];
+
+      if (testsToSave.length > 0) {
+        dynamicCarePlan.push({
           id: "cp-2",
-          title: "CBC Diagnostic Blood Test Ordered",
-          desc: "Sample processing at District Hospital Diagnostic Centre",
-          status: "current",
+          title: `${testsToSave[0].testName} Ordered`,
+          desc: `Sample processing at ${testsToSave[0].facility}`,
+          status: testsToSave[0].status === 'ready' ? 'completed' : 'current',
           targetScreen: "tests",
           actionText: "View Test"
-        },
-        {
+        });
+      }
+
+      if (prescriptionsToSave.length > 0) {
+        dynamicCarePlan.push({
           id: "cp-3",
-          title: "Take Prescribed Medicine: Paracetamol 650mg",
-          desc: "2:00 PM Afternoon dose is due now. Take after light snack.",
+          title: `Take Prescribed Medicine: ${prescriptionsToSave[0].medicineName}`,
+          desc: `${prescriptionsToSave[0].dosage} • ${prescriptionsToSave[0].frequency}`,
           status: "current",
           targetScreen: "medicine-reminders",
           actionText: "Take Medicine"
-        },
-        {
+        });
+      }
+
+      if (followUpDays) {
+        dynamicCarePlan.push({
           id: "cp-4",
           title: `Follow-up Consultation on ${dateStr}`,
           desc: `Scheduled review with General Medicine OPD (${followUpDays} days).`,
           status: "upcoming",
           targetScreen: "follow-up",
           date: dateStr
-        }
-      ];
+        });
+      }
+
+      if (referralToSave?.hasReferral) {
+        dynamicCarePlan.push({
+          id: "cp-5",
+          title: `Referral to ${referralToSave.destinationFacility}`,
+          desc: `Referral Token #${referralToSave.referralId} registered.`,
+          status: "pending",
+          targetScreen: "referrals",
+          actionText: "Track Referral"
+        });
+      }
+
+      const medNames = prescriptionsToSave.map(m => m.medicineName).join(', ');
+      const testNames = testsToSave.map(t => t.testName).join(', ');
 
       return {
         ...prev,
@@ -641,16 +706,17 @@ export const AppProvider = ({ children }) => {
           consultationTime: "Today, Just now",
           doctorName: "Dr. Priya Sharma",
           doctorRole: "Senior Medical Specialist",
-          room: "OPD Room 4",
+          room: prev.appointment?.room || "OPD Room 4",
           vitals: prev.consultation?.vitals || { bp: "118/78 mmHg", pulse: "84 bpm", temp: "100.8 °F", spo2: "98%" },
-          clinicalNotes: updatedNotes || "Patient examined. Low-grade pyrexia. Prescribed antipyretics and baseline CBC lab work.",
-          prescriptions: updatedPrescriptions,
-          testsOrdered: updatedTests,
-          followUpDays,
+          clinicalNotes: updatedNotes || "Patient examined. Vitals reviewed. Prescribed treatment plan and diagnostic investigation.",
+          prescriptions: prescriptionsToSave,
+          testsOrdered: testsToSave,
+          followUpDays: followUpDays || 7,
           followUpDate: dateStr,
           followUpReason: "General Medicine Review & Symptom Resolution"
         },
-        carePlanItems: updatedCarePlan,
+        referral: referralToSave,
+        carePlanItems: dynamicCarePlan,
         healthJourney: [
           {
             id: `hj-cons-${Date.now()}`,
@@ -658,7 +724,7 @@ export const AppProvider = ({ children }) => {
             time: "Just now",
             title: "Doctor Consultation Completed & Rx Issued",
             type: "consultation",
-            desc: "Consulted Dr. Priya Sharma. Prescribed Paracetamol 650mg & ordered CBC Test.",
+            desc: `Consulted Dr. Priya Sharma. ${prescriptionsToSave.length ? `Prescribed ${medNames}.` : ''} ${testsToSave.length ? `Ordered ${testNames}.` : ''}`,
             status: "completed",
             icon: "Stethoscope"
           },

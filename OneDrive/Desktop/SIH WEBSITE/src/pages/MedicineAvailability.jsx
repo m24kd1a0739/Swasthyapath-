@@ -16,6 +16,7 @@ import {
 
 export const MedicineAvailability = () => {
   const { 
+    patientData,
     facilities, 
     navigateTo, 
     addToast 
@@ -24,7 +25,9 @@ export const MedicineAvailability = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacilityFilter, setSelectedFacilityFilter] = useState('all');
 
-  // Simulated medicine inventory database across Bhopal government pharmacies
+  const prescribedMedNames = (patientData.consultation?.prescriptions || []).map(p => p.medicineName.toLowerCase());
+
+  // Simulated medicine inventory database across government pharmacies
   const inventory = [
     {
       id: 'med-1',
@@ -36,7 +39,7 @@ export const MedicineAvailability = () => {
       isAvailable: true,
       price: 'Free (Jan Aushadhi Scheme)',
       lastUpdated: '10 mins ago',
-      prescriptionLinked: true
+      prescriptionLinked: prescribedMedNames.some(n => n.includes('paracetamol'))
     },
     {
       id: 'med-2',
@@ -48,7 +51,7 @@ export const MedicineAvailability = () => {
       isAvailable: true,
       price: 'Free (Govt Supply)',
       lastUpdated: '25 mins ago',
-      prescriptionLinked: true
+      prescriptionLinked: prescribedMedNames.some(n => n.includes('ors') || n.includes('rehydration'))
     },
     {
       id: 'med-3',
