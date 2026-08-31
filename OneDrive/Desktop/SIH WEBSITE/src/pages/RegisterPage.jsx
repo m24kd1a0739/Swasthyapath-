@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
-  HeartHandshake, 
   UserPlus, 
   ArrowRight, 
   ArrowLeft, 
@@ -12,26 +11,30 @@ import {
   Calendar,
   MapPin,
   Globe,
-  Lock
+  Lock,
+  Play,
+  Sparkles
 } from 'lucide-react';
 
 export const RegisterPage = () => {
   const { 
     navigateTo, 
     setPendingRegData, 
+    startDemoJourney,
     addToast,
     playAudioChime 
   } = useApp();
 
+  // Form starts completely EMPTY (NO hardcoded Arun Kumar!)
   const [form, setForm] = useState({
-    fullName: 'Arun Kumar',
-    mobile: '9876543210',
-    dob: '1994-06-14',
+    fullName: '',
+    mobile: '',
+    dob: '',
     gender: 'Male',
-    location: 'Civil Lines, Bhopal',
+    location: '',
     language: 'en',
-    password: 'password123',
-    confirmPassword: 'password123'
+    password: '',
+    confirmPassword: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -40,12 +43,32 @@ export const RegisterPage = () => {
     e.preventDefault();
     const newErrors = {};
 
-    if (!form.fullName.trim()) newErrors.fullName = "Full Name is required";
-    if (!form.mobile.trim() || form.mobile.trim().length !== 10) newErrors.mobile = "Enter a valid 10-digit mobile number";
-    if (!form.dob) newErrors.dob = "Date of Birth is required";
-    if (!form.location.trim()) newErrors.location = "Location / District is required";
-    if (!form.password || form.password.length < 6) newErrors.password = "Password must be at least 6 characters";
-    if (form.password !== form.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
+    const cleanName = form.fullName.trim();
+    const cleanMobile = form.mobile.replace(/\D/g, '');
+
+    if (!cleanName || cleanName.length < 2) {
+      newErrors.fullName = "Please enter your full name (at least 2 characters)";
+    }
+
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      newErrors.mobile = "Please enter a valid 10-digit mobile number";
+    }
+
+    if (!form.dob) {
+      newErrors.dob = "Please select your date of birth";
+    }
+
+    if (!form.location.trim()) {
+      newErrors.location = "Please enter your district or city";
+    }
+
+    if (!form.password || form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters long";
+    }
+
+    if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -54,13 +77,18 @@ export const RegisterPage = () => {
     }
 
     setErrors({});
-    setPendingRegData(form);
-    addToast('Details Saved', 'Verification OTP sent to your registered mobile number.', 'info');
+    setPendingRegData({
+      ...form,
+      fullName: cleanName,
+      mobile: cleanMobile
+    });
+
+    addToast('Details Saved', `Verification OTP sent to +91 ${cleanMobile}.`, 'info');
     navigateTo('/otp');
   };
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '620px', margin: '1.5rem auto', padding: '0 1rem' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '640px', margin: '1.5rem auto', padding: '0 1rem' }}>
       
       {/* Back to Welcome */}
       <button 
@@ -77,26 +105,59 @@ export const RegisterPage = () => {
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{
-            width: '50px',
-            height: '50px',
+            width: '52px',
+            height: '52px',
             borderRadius: 'var(--radius-lg)',
             background: 'linear-gradient(135deg, var(--primary), #0284C7)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            margin: '0 auto 0.75rem',
+            margin: '0 auto 0.85rem',
             boxShadow: 'var(--shadow-sm)'
           }}>
             <UserPlus size={26} />
           </div>
 
-          <h2 style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
             Citizen Registration
           </h2>
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>
             Create your national digital health account (ABHA) on SwasthyaPath
           </p>
+        </div>
+
+        {/* Demo Mode Separation Banner */}
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-light)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.75rem 1rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.6rem'
+        }}>
+          <div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              Looking for SIH Judge Demo?
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Pre-loaded Arun Kumar presentation journey
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.76rem', padding: '0.35rem 0.75rem' }}
+            onClick={startDemoJourney}
+          >
+            <Play size={13} fill="currentColor" />
+            <span>Start Demo Journey</span>
+          </button>
         </div>
 
         {/* Registration Form */}
@@ -105,15 +166,16 @@ export const RegisterPage = () => {
           <div className="grid-2">
             {/* Full Name */}
             <div className="form-group">
-              <label className="form-label">Full Name</label>
+              <label className="form-label">Full Name *</label>
               <div style={{ position: 'relative' }}>
                 <input 
                   type="text" 
                   className={`form-input ${errors.fullName ? 'error' : ''}`}
-                  placeholder="e.g. Arun Kumar"
+                  placeholder="Enter your full name"
                   value={form.fullName}
                   onChange={e => setForm({ ...form, fullName: e.target.value })}
                   style={{ paddingLeft: '2.4rem' }}
+                  autoComplete="name"
                 />
                 <User size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
@@ -122,15 +184,17 @@ export const RegisterPage = () => {
 
             {/* Mobile Number */}
             <div className="form-group">
-              <label className="form-label">Mobile Number</label>
+              <label className="form-label">Mobile Number *</label>
               <div style={{ position: 'relative' }}>
                 <input 
-                  type="text" 
+                  type="tel" 
+                  maxLength={10}
                   className={`form-input ${errors.mobile ? 'error' : ''}`}
-                  placeholder="10-digit mobile"
+                  placeholder="10-digit mobile number"
                   value={form.mobile}
-                  onChange={e => setForm({ ...form, mobile: e.target.value })}
+                  onChange={e => setForm({ ...form, mobile: e.target.value.replace(/\D/g, '') })}
                   style={{ paddingLeft: '2.4rem' }}
+                  autoComplete="tel"
                 />
                 <Phone size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
@@ -141,7 +205,7 @@ export const RegisterPage = () => {
           <div className="grid-2">
             {/* Date of Birth */}
             <div className="form-group">
-              <label className="form-label">Date of Birth</label>
+              <label className="form-label">Date of Birth *</label>
               <input 
                 type="date" 
                 className={`form-input ${errors.dob ? 'error' : ''}`}
@@ -153,7 +217,7 @@ export const RegisterPage = () => {
 
             {/* Gender */}
             <div className="form-group">
-              <label className="form-label">Gender</label>
+              <label className="form-label">Gender *</label>
               <select 
                 className="form-select"
                 value={form.gender}
@@ -169,12 +233,12 @@ export const RegisterPage = () => {
           <div className="grid-2">
             {/* District Location */}
             <div className="form-group">
-              <label className="form-label">District / City Location</label>
+              <label className="form-label">District / City *</label>
               <div style={{ position: 'relative' }}>
                 <input 
                   type="text" 
                   className={`form-input ${errors.location ? 'error' : ''}`}
-                  placeholder="e.g. Civil Lines, Bhopal"
+                  placeholder="e.g. Bhopal, Indore, Delhi"
                   value={form.location}
                   onChange={e => setForm({ ...form, location: e.target.value })}
                   style={{ paddingLeft: '2.4rem' }}
@@ -204,15 +268,16 @@ export const RegisterPage = () => {
           <div className="grid-2">
             {/* Password */}
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label">Password *</label>
               <div style={{ position: 'relative' }}>
                 <input 
                   type="password" 
                   className={`form-input ${errors.password ? 'error' : ''}`}
-                  placeholder="Min 6 chars"
+                  placeholder="Min 6 characters"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
                   style={{ paddingLeft: '2.4rem' }}
+                  autoComplete="new-password"
                 />
                 <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
@@ -221,7 +286,7 @@ export const RegisterPage = () => {
 
             {/* Confirm Password */}
             <div className="form-group">
-              <label className="form-label">Confirm Password</label>
+              <label className="form-label">Confirm Password *</label>
               <div style={{ position: 'relative' }}>
                 <input 
                   type="password" 
@@ -230,6 +295,7 @@ export const RegisterPage = () => {
                   value={form.confirmPassword}
                   onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
                   style={{ paddingLeft: '2.4rem' }}
+                  autoComplete="new-password"
                 />
                 <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
@@ -247,7 +313,7 @@ export const RegisterPage = () => {
         <div style={{ textAlign: 'center', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)', fontSize: '0.86rem' }}>
           <span style={{ color: 'var(--text-muted)' }}>Already registered with ABHA? </span>
           <button 
-            type="button"
+            type="button" 
             className="btn-ghost"
             style={{ color: 'var(--primary)', fontWeight: 700, padding: 0 }}
             onClick={() => navigateTo('/login')}
@@ -260,3 +326,5 @@ export const RegisterPage = () => {
     </div>
   );
 };
+
+export default RegisterPage;

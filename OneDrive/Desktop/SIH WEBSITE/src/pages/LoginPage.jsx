@@ -10,6 +10,7 @@ import {
   ShieldCheck, 
   AlertCircle,
   KeyRound,
+  Play,
   Sparkles
 } from 'lucide-react';
 
@@ -17,14 +18,15 @@ export const LoginPage = () => {
   const { 
     navigateTo, 
     loginUser, 
+    startDemoJourney,
     addToast,
     setPendingRegData,
     playAudioChime 
   } = useApp();
 
-  const [loginMethod, setLoginMethod] = useState('otp'); // 'otp' | 'password'
-  const [loginInput, setLoginInput] = useState('9876543210');
-  const [passwordInput, setPasswordInput] = useState('password123');
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
+  const [loginInput, setLoginInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [errors, setErrors] = useState({});
 
   const handleLoginSubmit = (e) => {
@@ -33,9 +35,9 @@ export const LoginPage = () => {
 
     const cleanInput = loginInput.trim();
     if (!cleanInput) {
-      newErrors.login = "Mobile Number or Email / ABHA ID is required";
-    } else if (cleanInput.length < 10) {
-      newErrors.login = "Enter a valid 10-digit mobile number or ABHA ID";
+      newErrors.login = "Mobile Number or ABHA ID is required";
+    } else if (cleanInput.replace(/\D/g, '').length < 10 && !cleanInput.includes('-')) {
+      newErrors.login = "Please enter a valid 10-digit mobile number or ABHA ID";
     }
 
     if (loginMethod === 'password') {
@@ -55,11 +57,16 @@ export const LoginPage = () => {
     setErrors({});
 
     if (loginMethod === 'otp') {
-      setPendingRegData(prev => ({ ...prev, mobile: cleanInput }));
-      addToast('OTP Generated', `6-digit verification code sent to ${cleanInput}.`, 'info');
+      const cleanMobile = cleanInput.replace(/\D/g, '').slice(0, 10);
+      setPendingRegData(prev => ({ ...prev, mobile: cleanMobile }));
+      addToast('OTP Dispatched', `6-digit verification code sent to +91 ${cleanMobile}.`, 'info');
       navigateTo('/otp');
     } else {
-      loginUser(cleanInput);
+      const success = loginUser(cleanInput, passwordInput);
+      if (!success) {
+        setErrors({ general: "Incorrect mobile number or password." });
+        playAudioChime('warning');
+      }
     }
   };
 
@@ -106,52 +113,85 @@ export const LoginPage = () => {
             Citizen Login
           </h2>
           <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-            Sign in to access your public healthcare continuum & live OPD queues
+            Sign in to access your digital health record, live OPD queues & care continuity
           </p>
         </div>
 
-        {/* Demo Helper Pill */}
+        {/* Demo Mode Quick Launch Card */}
         <div style={{
-          background: 'var(--primary-surface)',
-          border: '1px solid var(--primary-border)',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-light)',
           borderRadius: 'var(--radius-md)',
-          padding: '0.65rem 0.85rem',
-          fontSize: '0.78rem',
-          color: 'var(--primary-text)',
+          padding: '0.75rem 1rem',
+          fontSize: '0.8rem',
+          color: 'var(--text-main)',
           marginBottom: '1.5rem',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.5rem'
         }}>
           <div>
-            <strong>Demo User:</strong> Arun Kumar (9876543210)
+            <div style={{ fontWeight: 700 }}>SIH Judge Demo Mode</div>
+            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Arun Kumar (9876543210)</div>
           </div>
-          <button 
-            type="button" 
-            className="badge badge-primary"
-            style={{ cursor: 'pointer', border: '1px solid var(--primary)' }}
-            onClick={handleFillDemo}
-          >
-            Auto-fill
-          </button>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <button 
+              type="button" 
+              className="badge badge-primary"
+              style={{ cursor: 'pointer' }}
+              onClick={handleFillDemo}
+            >
+              Fill Form
+            </button>
+            <button 
+              type="button" 
+              className="badge badge-success"
+              style={{ cursor: 'pointer' }}
+              onClick={startDemoJourney}
+            >
+              Direct Launch
+            </button>
+          </div>
         </div>
+
+        {/* General Error Display */}
+        {errors.general && (
+          <div style={{
+            background: 'var(--danger-surface)',
+            border: '1px solid var(--danger-border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '0.65rem 0.85rem',
+            color: 'var(--danger-text)',
+            fontSize: '0.84rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}>
+            <AlertCircle size={16} />
+            <span>{errors.general}</span>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLoginSubmit}>
           
-          {/* Mobile / Email Field */}
+          {/* Mobile / ABHA Field */}
           <div className="form-group" style={{ marginBottom: '1.25rem' }}>
             <label className="form-label">
-              Mobile Number or ABHA / National Health ID
+              Mobile Number or ABHA ID
             </label>
             <div style={{ position: 'relative' }}>
               <input 
                 type="text" 
                 className={`form-input ${errors.login ? 'error' : ''}`}
-                placeholder="e.g. 9876543210 or 91-8472-9102-4821"
+                placeholder="Enter 10-digit mobile number or ABHA ID"
                 value={loginInput}
                 onChange={e => setLoginInput(e.target.value)}
                 style={{ paddingLeft: '2.4rem' }}
+                autoComplete="username"
               />
               <Phone size={17} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             </div>
@@ -163,7 +203,7 @@ export const LoginPage = () => {
             )}
           </div>
 
-          {/* Password Field (When password mode is selected) */}
+          {/* Password Field */}
           {loginMethod === 'password' && (
             <div className="form-group" style={{ marginBottom: '1rem' }}>
               <label className="form-label">Password</label>
@@ -175,6 +215,7 @@ export const LoginPage = () => {
                   value={passwordInput}
                   onChange={e => setPasswordInput(e.target.value)}
                   style={{ paddingLeft: '2.4rem' }}
+                  autoComplete="current-password"
                 />
                 <Lock size={17} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               </div>
@@ -187,7 +228,7 @@ export const LoginPage = () => {
             </div>
           )}
 
-          {/* Login Mode Toggle & Forgot Password */}
+          {/* Toggle between OTP and Password */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', fontSize: '0.82rem' }}>
             <button 
               type="button" 
@@ -202,7 +243,7 @@ export const LoginPage = () => {
               type="button" 
               className="btn-ghost btn-sm"
               style={{ color: 'var(--text-muted)', padding: 0 }}
-              onClick={() => addToast('Password Reset', 'Password recovery link sent to registered mobile number.', 'info')}
+              onClick={() => addToast('Password Recovery', 'Recovery instructions dispatched via SMS.', 'info')}
             >
               Forgot Password?
             </button>
@@ -232,3 +273,5 @@ export const LoginPage = () => {
     </div>
   );
 };
+
+export default LoginPage;

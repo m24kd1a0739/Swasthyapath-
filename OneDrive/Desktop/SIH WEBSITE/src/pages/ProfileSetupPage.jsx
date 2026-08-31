@@ -10,7 +10,9 @@ import {
   ShieldCheck,
   Globe,
   Phone,
-  Moon
+  Moon,
+  MapPin,
+  Calendar
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -18,53 +20,29 @@ export const ProfileSetupPage = () => {
   const { 
     navigateTo, 
     pendingRegData, 
-    patientData, 
-    setPatientData, 
-    setIsAuthenticated, 
-    addToast,
+    registerUser,
     highContrast,
     setHighContrast 
   } = useApp();
 
   const [step, setStep] = useState(1);
 
+  // Load actual user-entered data from registration
   const [form, setForm] = useState({
-    name: pendingRegData.fullName || 'Arun Kumar',
-    dob: pendingRegData.dob || '1994-06-14',
+    fullName: pendingRegData.fullName || '',
+    mobile: pendingRegData.mobile || '',
+    dob: pendingRegData.dob || '',
     gender: pendingRegData.gender || 'Male',
-    location: pendingRegData.location || 'Civil Lines, Bhopal',
+    location: pendingRegData.location || '',
     language: pendingRegData.language || 'en',
-    emergencyName: 'Sunita Kumar',
-    emergencyRel: 'Spouse',
-    emergencyPhone: '+91 98765 43211',
+    emergencyName: pendingRegData.emergencyName || '',
+    emergencyRel: pendingRegData.emergencyRel || 'Family',
+    emergencyPhone: pendingRegData.emergencyPhone || '',
     highContrastPref: highContrast
   });
 
   const handleNext = () => {
     if (step === 2) {
-      // Complete profile and commit to patient state
-      setPatientData(prev => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          fullName: form.name,
-          dob: form.dob,
-          gender: form.gender,
-          location: form.location,
-          preferredLanguage: form.language,
-          emergencyContact: {
-            name: form.emergencyName,
-            phone: form.emergencyPhone,
-            relationship: form.emergencyRel,
-            permissions: {
-              shareAppointments: true,
-              shareEmergency: true,
-              shareCareUpdates: true
-            }
-          }
-        }
-      }));
-
       try {
         confetti({
           particleCount: 90,
@@ -80,9 +58,7 @@ export const ProfileSetupPage = () => {
   };
 
   const handleComplete = () => {
-    setIsAuthenticated(true);
-    addToast('Profile Activated', `Welcome to SwasthyaPath, ${form.name}!`, 'success');
-    navigateTo('/home');
+    registerUser(form);
   };
 
   return (
@@ -97,9 +73,9 @@ export const ProfileSetupPage = () => {
               Step {step} of 3
             </span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {step === 1 && 'Personal Details'}
-              {step === 2 && 'Preferences & Emergency Contact'}
-              {step === 3 && 'Profile Setup Complete'}
+              {step === 1 && 'Personal Demographics'}
+              {step === 2 && 'Emergency Contact & Language'}
+              {step === 3 && 'Account Activation Ready'}
             </span>
           </div>
 
@@ -130,8 +106,9 @@ export const ProfileSetupPage = () => {
                 <input 
                   type="text" 
                   className="form-input"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  placeholder="Enter your full name"
+                  value={form.fullName}
+                  onChange={e => setForm({ ...form, fullName: e.target.value })}
                 />
               </div>
 
@@ -161,10 +138,11 @@ export const ProfileSetupPage = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Primary District / Location</label>
+                <label className="form-label">Primary District / City Location</label>
                 <input 
                   type="text" 
                   className="form-input"
+                  placeholder="e.g. Bhopal, Indore"
                   value={form.location}
                   onChange={e => setForm({ ...form, location: e.target.value })}
                 />
@@ -178,7 +156,7 @@ export const ProfileSetupPage = () => {
                 Step 2: Preferences & Emergency Contact
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                Set your language, accessibility preferences, and emergency contact for SOS dispatch.
+                Set your language preferences and emergency contact for SOS medical alerts.
               </p>
 
               <div className="form-group">
@@ -202,6 +180,7 @@ export const ProfileSetupPage = () => {
                   <input 
                     type="text" 
                     className="form-input"
+                    placeholder="e.g. Spouse, Parent, Sibling"
                     value={form.emergencyName}
                     onChange={e => setForm({ ...form, emergencyName: e.target.value })}
                   />
@@ -212,6 +191,7 @@ export const ProfileSetupPage = () => {
                   <input 
                     type="text" 
                     className="form-input"
+                    placeholder="e.g. Spouse, Mother"
                     value={form.emergencyRel}
                     onChange={e => setForm({ ...form, emergencyRel: e.target.value })}
                   />
@@ -219,10 +199,11 @@ export const ProfileSetupPage = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Emergency Contact Mobile</label>
+                <label className="form-label">Emergency Contact Mobile Number</label>
                 <input 
-                  type="text" 
+                  type="tel" 
                   className="form-input"
+                  placeholder="10-digit mobile number"
                   value={form.emergencyPhone}
                   onChange={e => setForm({ ...form, emergencyPhone: e.target.value })}
                 />
@@ -248,11 +229,11 @@ export const ProfileSetupPage = () => {
               </div>
 
               <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.4rem' }}>
-                Your SwasthyaPath profile is ready.
+                Your SwasthyaPath Profile is Ready!
               </h2>
 
               <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: 1.55 }}>
-                Your digital ABHA record is synchronized with the state healthcare navigation grid. You can now track your symptoms, hospital queues, lab tests, and prescriptions.
+                Your digital ABHA health record is created and synchronized with the public healthcare gateway.
               </p>
 
               <div style={{
@@ -264,8 +245,12 @@ export const ProfileSetupPage = () => {
                 border: '1px solid var(--border-light)',
                 marginBottom: '0.5rem'
               }}>
-                <div style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-main)' }}>Patient: {form.name} (32 M)</div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>ABHA ID: 91-8472-9102-4821 • Location: {form.location}</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                  Patient: {form.fullName || 'Citizen'} ({form.gender})
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  Location: {form.location || 'Bhopal'} • Language: {form.language?.toUpperCase()}
+                </div>
               </div>
             </div>
           )}
@@ -298,3 +283,5 @@ export const ProfileSetupPage = () => {
     </div>
   );
 };
+
+export default ProfileSetupPage;

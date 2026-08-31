@@ -32,8 +32,19 @@ export const AiTriageResult = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const triage = patientData.aiTriage;
-  const symptoms = patientData.symptoms;
+  const triage = patientData.aiTriage || {
+    recommendedCareLevel: "District Hospital / Community Health Centre",
+    priority: "Normal Priority",
+    facilityType: "Secondary Public Healthcare (District Hospital)",
+    reason: "Clinical examination and baseline blood work (CBC) advised for accurate symptom evaluation.",
+    disclaimer: "SwasthyaPath provides care navigation and triage support. It does not replace professional medical diagnosis or emergency care."
+  };
+
+  const symptoms = patientData.symptoms || {
+    text: "Fever and general malaise",
+    selectedChips: ["Fever"],
+    duration: "3 days"
+  };
 
   if (isLoading) {
     return (

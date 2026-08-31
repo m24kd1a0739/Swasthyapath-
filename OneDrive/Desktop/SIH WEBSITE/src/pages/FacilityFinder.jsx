@@ -64,7 +64,7 @@ export const FacilityFinder = () => {
             Government Healthcare Facilities
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Ranked for: <strong>Fever (3d) + Weakness</strong> (Matches: Doctor, CBC Lab & Pharmacy Stock)
+            Ranked for: <strong>{patientData.symptoms?.text || "Fever (3d) + Weakness"}</strong> (Matches: Doctor, CBC Lab & Pharmacy Stock)
           </p>
         </div>
 

@@ -128,9 +128,17 @@ export const DoctorConsultation = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
             <span className="badge badge-neutral">Triage: Normal Priority</span>
-            <span className="badge badge-primary">District OPD</span>
+            <button 
+              type="button" 
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.76rem', color: 'var(--primary)', fontWeight: 700 }}
+              onClick={() => navigateTo('care-transfer')}
+            >
+              <Share2 size={13} />
+              <span>Transfer Care to Another Facility →</span>
+            </button>
           </div>
         </div>
 

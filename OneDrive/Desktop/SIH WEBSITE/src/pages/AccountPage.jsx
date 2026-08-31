@@ -74,6 +74,14 @@ export const AccountPage = () => {
     addToast('Caregiver Configured', `${caregiverForm.name} added with selective permissions.`, 'success');
   };
 
+  const fullName = patientData.profile?.fullName || 'Citizen';
+  const initials = fullName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'SP';
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '850px', margin: '0 auto' }}>
       
@@ -103,14 +111,14 @@ export const AccountPage = () => {
             fontWeight: 800,
             fontSize: '1.4rem'
           }}>
-            AK
+            {initials}
           </div>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-              {patientData.profile.fullName}
+              {fullName}
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              ABHA ID: <strong>{patientData.profile.abhaId}</strong> • Mobile: <strong>{patientData.profile.mobile}</strong>
+              ABHA ID: <strong>{patientData.profile.abhaId}</strong> • Mobile: <strong>{patientData.profile.mobile || '+91 98765 43210'}</strong>
             </p>
           </div>
         </div>
@@ -124,11 +132,11 @@ export const AccountPage = () => {
           <div className="grid-2" style={{ fontSize: '0.88rem' }}>
             <div style={{ background: 'var(--bg-surface)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)' }}>
               <span style={{ color: 'var(--text-muted)' }}>Date of Birth: </span>
-              <strong>{patientData.profile.dob} (Age 32)</strong>
+              <strong>{patientData.profile.dob || '1994-06-14'} (Age {patientData.profile.age || 32})</strong>
             </div>
             <div style={{ background: 'var(--bg-surface)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)' }}>
               <span style={{ color: 'var(--text-muted)' }}>Gender: </span>
-              <strong>{patientData.profile.gender}</strong>
+              <strong>{patientData.profile.gender || 'Male'}</strong>
             </div>
             <div style={{ background: 'var(--bg-surface)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)' }}>
               <span style={{ color: 'var(--text-muted)' }}>Registered Location: </span>

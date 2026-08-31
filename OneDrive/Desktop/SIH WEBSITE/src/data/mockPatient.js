@@ -1,4 +1,10 @@
-export const initialPatientData = {
+// ==========================================
+// SWASTHYAPATH PATIENT DATA SCHEMAS
+// 1. demoPatientData: Arun Kumar demo dataset for SIH presentation
+// 2. createEmptyPatient: Clean empty state for new manual registrations
+// ==========================================
+
+export const demoPatientData = {
   profile: {
     fullName: "Arun Kumar",
     abhaId: "91-8472-9102-4821",
@@ -149,6 +155,34 @@ export const initialPatientData = {
     status: "Accepted & Scheduled"
   },
 
+  careTransfer: {
+    hasTransfer: true,
+    transferId: "TRF-MP-2026-9281",
+    sourceFacilityId: "fac-2",
+    sourceFacilityName: "Primary Health Centre (PHC) Kolar",
+    destinationFacilityId: "fac-1",
+    destinationFacilityName: "District Government Hospital, Central",
+    reason: "Required diagnostic blood testing & specialist physician examination unavailable at current facility",
+    requestedAt: "Today, 10:10 AM",
+    currentStage: 3, // 0: Requested, 1: Records Prepared, 2: Records Sent, 3: Records Received, 4: Accepted & Token Issued
+    stages: [
+      { stage: 0, title: "Transfer Requested", timestamp: "Today, 10:10 AM", done: true },
+      { stage: 1, title: "Records Selected & Encrypted", timestamp: "Today, 10:12 AM", done: true },
+      { stage: 2, title: "Records Dispatched to Destination", timestamp: "Today, 10:14 AM", done: true },
+      { stage: 3, title: "District Hospital Received Records", timestamp: "Today, 10:16 AM", done: true },
+      { stage: 4, title: "Care Continuation Accepted & OPD Ready", timestamp: "Today, 10:18 AM", done: true }
+    ],
+    status: "Records Received",
+    sharedRecords: [
+      { id: "rec-consult", type: "consultation", label: "PHC Clinical Consultation Summary", count: 1, shared: true },
+      { id: "rec-rx", type: "prescription", label: "Prescription & Active Dosage (Paracetamol + ORS)", count: 2, shared: true },
+      { id: "rec-test", type: "test", label: "CBC Diagnostic Blood Test Order & Lab Parameters", count: 1, shared: true },
+      { id: "rec-ref", type: "referral", label: "Inter-Facility Referral Token #REF-MP-2026-8941", count: 1, shared: true },
+      { id: "rec-careplan", type: "careplan", label: "Active Care Plan Action Items", count: 4, shared: true }
+    ],
+    transferredToken: "A-08"
+  },
+
   carePlanItems: [
     {
       id: "cp-1",
@@ -192,6 +226,16 @@ export const initialPatientData = {
   ],
 
   healthJourney: [
+    {
+      id: "hj-transfer-1",
+      date: "Today, Aug 30",
+      time: "10:18 AM",
+      title: "Care Transferred to District Government Hospital",
+      type: "transfer",
+      desc: "Care transferred from PHC Kolar. 5 health records shared with clinical consent.",
+      status: "completed",
+      icon: "Share2"
+    },
     {
       id: "hj-1",
       date: "Today, Aug 30",
@@ -256,6 +300,16 @@ export const initialPatientData = {
 
   alerts: [
     {
+      id: "alt-transfer-1",
+      title: "Care Transfer Accepted",
+      message: "District Government Hospital has received your health records and reserved Token #A-08.",
+      type: "transfer",
+      severity: "success",
+      targetScreen: "care-transfer",
+      timestamp: "Just now",
+      read: false
+    },
+    {
       id: "alt-1",
       title: "Medicine Due Now",
       message: "Your 2:00 PM Paracetamol 650mg dose is due now. Remember to take it after food.",
@@ -294,16 +348,118 @@ export const initialPatientData = {
       targetScreen: "follow-up",
       timestamp: "2 hours ago",
       read: true
-    },
-    {
-      id: "alt-5",
-      title: "Medicine Available at Counter",
-      message: "Paracetamol 650mg & ORS are in stock at District Hospital Pharmacy Counter 2.",
-      type: "facility",
-      severity: "info",
-      targetScreen: "medicines",
-      timestamp: "3 hours ago",
-      read: true
     }
   ]
 };
+
+// ==========================================
+// Helper to generate dynamic ABHA ID
+// ==========================================
+export const generateAbhaId = (phone = '') => {
+  const digits = (phone.replace(/\D/g, '') + '847291024821').slice(0, 10);
+  const part1 = '91';
+  const part2 = digits.slice(0, 4) || '8472';
+  const part3 = digits.slice(4, 8) || '9102';
+  const part4 = (digits.slice(8, 10) || '48') + '21';
+  return `${part1}-${part2}-${part3}-${part4}`;
+};
+
+// ==========================================
+// Factory to create a clean empty patient profile
+// for real users (Ravi, Sita, Priya, etc.)
+// ==========================================
+export const createEmptyPatient = (profileData = {}) => {
+  const name = profileData.fullName || profileData.name || '';
+  const mobile = profileData.mobile || '';
+  const dob = profileData.dob || '';
+  const gender = profileData.gender || 'Male';
+  const location = profileData.location || '';
+  const language = profileData.language || 'en';
+  const abha = generateAbhaId(mobile);
+
+  return {
+    profile: {
+      fullName: name,
+      abhaId: abha,
+      mobile: mobile ? (mobile.startsWith('+91') ? mobile : `+91 ${mobile}`) : '',
+      dob: dob,
+      age: dob ? Math.max(1, new Date().getFullYear() - new Date(dob).getFullYear()) : 28,
+      gender: gender,
+      location: location,
+      preferredLanguage: language,
+      emergencyContact: {
+        name: profileData.emergencyName || '',
+        relationship: profileData.emergencyRel || 'Family',
+        phone: profileData.emergencyPhone || '',
+        permissions: {
+          shareAppointments: true,
+          shareEmergency: true,
+          shareCareUpdates: true
+        }
+      }
+    },
+
+    caregiver: {
+      name: profileData.emergencyName || '',
+      relation: profileData.emergencyRel || 'Family',
+      phone: profileData.emergencyPhone || '',
+      activePermissions: ["Emergency Info", "Appointments"]
+    },
+
+    symptoms: null,
+    aiTriage: null,
+    appointment: null,
+
+    consultation: {
+      consulted: false,
+      consultationTime: null,
+      doctorName: null,
+      doctorRole: null,
+      room: null,
+      vitals: {
+        bp: "120/80 mmHg",
+        pulse: "76 bpm",
+        temp: "98.6 °F",
+        spo2: "99%"
+      },
+      clinicalNotes: "",
+      prescriptions: [],
+      testsOrdered: [],
+      followUpDays: null,
+      followUpDate: null,
+      followUpReason: null
+    },
+
+    referral: null,
+    careTransfer: null,
+    carePlanItems: [],
+    
+    healthJourney: [
+      {
+        id: `hj-init-${Date.now()}`,
+        date: "Today",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        title: "National Health Account (ABHA) Registered",
+        type: "account",
+        desc: `ABHA ID ${abha} registered in SwasthyaPath National Public Healthcare Gateway.`,
+        status: "completed",
+        icon: "ShieldCheck"
+      }
+    ],
+
+    alerts: [
+      {
+        id: `alt-welcome-${Date.now()}`,
+        title: `Welcome to SwasthyaPath, ${name || 'Citizen'}!`,
+        message: "You can now enter your health symptoms, get AI care navigation, book OPD tokens, and manage care continuity.",
+        type: "facility",
+        severity: "info",
+        targetScreen: "symptoms",
+        timestamp: "Just now",
+        read: false
+      }
+    ]
+  };
+};
+
+export const initialPatientData = demoPatientData;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { initialPatientData } from '../data/mockPatient';
+import { demoPatientData, createEmptyPatient, initialPatientData } from '../data/mockPatient';
 import { mockFacilities } from '../data/mockFacilities';
 import { translations } from '../data/translations';
 
@@ -10,9 +10,14 @@ export const AppProvider = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Authentication: Default FALSE for clean initial Welcome/Landing page experience
+  // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('swasthya_auth') === 'true';
+  });
+
+  // Demo Mode Flag ('true' | 'false')
+  const [isDemoMode, setIsDemoMode] = useState(() => {
+    return localStorage.getItem('swasthya_is_demo') === 'true';
   });
 
   // User Role: 'patient' | 'health-worker' | 'facility-staff' | 'admin'
@@ -20,17 +25,19 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('swasthya_role') || 'patient';
   });
 
-  // Pending Auth Data for Registration / OTP flow
+  // Clean empty pending registration form data (NO hardcoded Arun Kumar!)
   const [pendingRegData, setPendingRegData] = useState(() => {
     return {
-      fullName: 'Arun Kumar',
-      mobile: '9876543210',
-      dob: '1994-06-14',
+      fullName: '',
+      mobile: '',
+      dob: '',
       gender: 'Male',
-      location: 'Civil Lines, Bhopal',
+      location: '',
       language: 'en',
-      emergencyName: 'Sunita Kumar',
-      emergencyPhone: '+91 98765 43211',
+      password: '',
+      confirmPassword: '',
+      emergencyName: '',
+      emergencyPhone: '',
       emergencyRel: 'Spouse'
     };
   });
@@ -46,17 +53,18 @@ export const AppProvider = ({ children }) => {
   // Network Connectivity State (Online / Syncing / Offline)
   const [networkStatus, setNetworkStatus] = useState('online');
 
-  // Shared Reactive Patient & Medical State (Arun Kumar demo dataset)
+  // Active Patient State
   const [patientData, setPatientData] = useState(() => {
     const saved = localStorage.getItem('swasthya_patient_state');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return initialPatientData;
+        return demoPatientData;
       }
     }
-    return initialPatientData;
+    const isDemo = localStorage.getItem('swasthya_is_demo') === 'true';
+    return isDemo ? demoPatientData : createEmptyPatient();
   });
 
   // Facilities dataset
@@ -80,7 +88,7 @@ export const AppProvider = ({ children }) => {
   // Toasts
   const [toasts, setToasts] = useState([]);
 
-  // SIH Presentation Tour Step (1 - 20)
+  // SIH Presentation Tour Step (1 - 22)
   const [demoStep, setDemoStep] = useState(1);
   const [demoTourActive, setDemoTourActive] = useState(false);
 
@@ -88,6 +96,10 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('swasthya_auth', isAuthenticated ? 'true' : 'false');
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    localStorage.setItem('swasthya_is_demo', isDemoMode ? 'true' : 'false');
+  }, [isDemoMode]);
 
   useEffect(() => {
     localStorage.setItem('swasthya_patient_state', JSON.stringify(patientData));
@@ -124,7 +136,6 @@ export const AppProvider = ({ children }) => {
       setSelectedFacility(paramFacility);
     }
 
-    // Map screen aliases to proper URL paths
     const routeMap = {
       'landing': '/',
       'welcome': '/',
@@ -153,6 +164,8 @@ export const AppProvider = ({ children }) => {
       'medicine-reminders': '/medicine-reminder',
       'medicine-reminder': '/medicine-reminder',
       'care-plan': '/care-plan',
+      'care-transfer': '/care-transfer',
+      'transfer-care': '/care-transfer',
       'journey': '/health-journey',
       'health-journey': '/health-journey',
       'follow-up': '/follow-up',
@@ -242,50 +255,121 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Start Demo Journey with Arun Kumar
+  // 1. Action: Start Demo Journey (Explicitly loads Arun Kumar dataset)
   const startDemoJourney = () => {
-    setPatientData(initialPatientData);
+    setIsDemoMode(true);
+    setPatientData(demoPatientData);
     setFacilities(mockFacilities);
     setSelectedFacility(mockFacilities[0]);
     setIsAuthenticated(true);
     setUserRole('patient');
     setDemoTourActive(true);
     setDemoStep(1);
+    localStorage.setItem('swasthya_patient_state', JSON.stringify(demoPatientData));
+    localStorage.setItem('swasthya_is_demo', 'true');
     navigateTo('/home');
-    addToast('Demo Journey Started', 'Preloaded Arun Kumar (Fever for 3 days).', 'success');
+    addToast('Demo Mode Activated', 'Preloaded Arun Kumar presentation journey.', 'success');
   };
 
-  // Login action
-  const loginUser = (mobileOrEmail) => {
+  // 2. Action: Register New User (Starts clean without Arun Kumar)
+  const registerUser = (formData) => {
+    const newPatient = createEmptyPatient(formData);
+    setPatientData(newPatient);
+    setIsDemoMode(false);
     setIsAuthenticated(true);
-    addToast('Login Successful', 'Welcome back to SwasthyaPath!', 'success');
+    setUserRole('patient');
+    setDemoTourActive(false);
+
+    // Save to user database
+    try {
+      const usersDb = JSON.parse(localStorage.getItem('swasthya_users_db') || '{}');
+      const cleanPhone = formData.mobile.replace(/\D/g, '');
+      usersDb[cleanPhone] = {
+        formData,
+        patientData: newPatient,
+        registeredAt: new Date().toISOString()
+      };
+      localStorage.setItem('swasthya_users_db', JSON.stringify(usersDb));
+    } catch (e) {}
+
+    localStorage.setItem('swasthya_patient_state', JSON.stringify(newPatient));
+    localStorage.setItem('swasthya_is_demo', 'false');
+    addToast('Registration Successful', `Welcome to SwasthyaPath, ${formData.fullName}!`, 'success');
     navigateTo('/home');
   };
 
-  // Logout action
+  // 3. Action: Login User
+  const loginUser = (mobileOrAbha, password = '') => {
+    const cleanInput = mobileOrAbha.replace(/\D/g, '');
+    
+    // Check if demo user
+    if (cleanInput === '9876543210' || mobileOrAbha.toLowerCase().includes('arun')) {
+      startDemoJourney();
+      return true;
+    }
+
+    // Check user database
+    try {
+      const usersDb = JSON.parse(localStorage.getItem('swasthya_users_db') || '{}');
+      if (usersDb[cleanInput]) {
+        const savedAccount = usersDb[cleanInput];
+        setPatientData(savedAccount.patientData || createEmptyPatient(savedAccount.formData));
+        setIsDemoMode(false);
+        setIsAuthenticated(true);
+        setUserRole('patient');
+        addToast('Welcome Back', `Logged in as ${savedAccount.formData.fullName}`, 'success');
+        navigateTo('/home');
+        return true;
+      }
+    } catch (e) {}
+
+    // If new mobile number provided, generate clean account for user
+    if (cleanInput.length === 10) {
+      const newPatient = createEmptyPatient({
+        fullName: pendingRegData.fullName || `Citizen (+91 ${cleanInput.slice(0, 5)}...)`,
+        mobile: cleanInput,
+        location: 'District Central, Bhopal'
+      });
+      setPatientData(newPatient);
+      setIsDemoMode(false);
+      setIsAuthenticated(true);
+      setUserRole('patient');
+      addToast('Login Successful', `Signed in with +91 ${cleanInput}`, 'success');
+      navigateTo('/home');
+      return true;
+    }
+
+    return false;
+  };
+
+  // 4. Action: Logout
   const logoutUser = () => {
     setIsAuthenticated(false);
+    setIsDemoMode(false);
     localStorage.removeItem('swasthya_auth');
+    localStorage.removeItem('swasthya_is_demo');
     setDemoTourActive(false);
     navigateTo('/');
-    addToast('Logged Out Successfully', 'You have been safely logged out.', 'info');
+    addToast('Logged Out', 'You have been safely signed out.', 'info');
   };
 
-  // 1. Feature: Submit Health Symptoms
+  // 5. Feature: Submit Symptoms (AI Triage)
   const submitSymptoms = (text, selectedChips = [], duration = "3 days") => {
     const isEmergencySymptom = text.toLowerCase().includes('chest pain') || 
                               text.toLowerCase().includes('breathing') || 
                               selectedChips.includes('Breathing Difficulty');
 
     let triageLevel = "District Hospital / Community Health Centre";
-    let priority = "Normal";
-    let reason = "Fever lasting >= 3 days accompanied by generalized fatigue requires medical examination, vitals check, and baseline diagnostic blood work (CBC) to check for infection.";
+    let priority = "Normal Priority";
+    let reason = `Assessment for "${text || selectedChips.join(', ')}": lasting ${duration} requires clinical examination, vitals evaluation, and baseline diagnostic workup (e.g. CBC) to rule out complications.`;
 
     if (isEmergencySymptom) {
       triageLevel = "Emergency Trauma Centre (District Hospital)";
       priority = "High Priority";
       reason = "Symptoms suggest acute respiratory or cardiovascular distress. Immediate triage stabilization advised.";
     }
+
+    const patientName = patientData.profile.fullName || 'Patient';
 
     setPatientData(prev => ({
       ...prev,
@@ -302,13 +386,37 @@ export const AppProvider = ({ children }) => {
         facilityType: "Secondary Public Healthcare (District Hospital)",
         reason,
         disclaimer: "SwasthyaPath provides care navigation and triage support. It does not replace professional medical diagnosis or emergency care."
-      }
+      },
+      healthJourney: [
+        {
+          id: `hj-symp-${Date.now()}`,
+          date: "Today",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          title: "AI Care Navigation Triage Completed",
+          type: "triage",
+          desc: `Reported: "${text || selectedChips.join(', ')}". Recommended care level: ${triageLevel}.`,
+          status: "completed",
+          icon: "Cpu"
+        },
+        ...prev.healthJourney
+      ],
+      carePlanItems: [
+        {
+          id: 'cp-find-fac',
+          title: `Visit Recommended Facility: District Hospital`,
+          desc: `Triage priority: ${priority}. General Medicine OPD examination recommended.`,
+          status: 'current',
+          targetScreen: 'facilities',
+          actionText: 'Find Facility'
+        },
+        ...prev.carePlanItems.filter(i => i.id !== 'cp-find-fac')
+      ]
     }));
 
-    addToast('AI Triage Completed', 'Health recommendation generated based on clinical protocols.', 'success');
+    addToast('Care Navigation Complete', 'Triage recommendation generated based on clinical protocols.', 'success');
   };
 
-  // 2. Feature: Book Appointment / Join Queue
+  // 6. Feature: Book Appointment / Join Live Queue
   const bookAppointment = (facilityId, doctorId, date = "Today", time = "10:30 AM") => {
     const facility = facilities.find(f => f.id === facilityId) || facilities[0];
     const doctor = facility.doctors?.find(d => d.id === doctorId) || facility.doctors?.[0] || { name: "Dr. Priya Sharma" };
@@ -336,7 +444,6 @@ export const AppProvider = ({ children }) => {
         patientsAhead: newPos - 1
       },
       carePlanItems: [
-        ...prev.carePlanItems.filter(item => item.id !== 'cp-booking'),
         {
           id: 'cp-booking',
           title: `OPD Appointment at ${facility.name}`,
@@ -344,14 +451,28 @@ export const AppProvider = ({ children }) => {
           status: 'current',
           targetScreen: 'live-queue',
           actionText: 'View Queue'
-        }
+        },
+        ...prev.carePlanItems.filter(item => item.id !== 'cp-booking' && item.id !== 'cp-find-fac')
+      ],
+      healthJourney: [
+        {
+          id: `hj-appt-${Date.now()}`,
+          date: "Today",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          title: `OPD Queue Token #${tokenNum} Issued`,
+          type: "queue",
+          desc: `Booked General Medicine consultation at ${facility.name} with ${doctor.name}.`,
+          status: "completed",
+          icon: "Users"
+        },
+        ...prev.healthJourney
       ]
     }));
 
     addToast('Appointment Confirmed', `Token #${tokenNum} issued for ${facility.name}`, 'success');
   };
 
-  // 3. Feature: Check-in Simulation
+  // 7. Feature: Check-in Simulation
   const checkInPatient = () => {
     setPatientData(prev => ({
       ...prev,
@@ -360,12 +481,25 @@ export const AppProvider = ({ children }) => {
         checkedIn: true,
         checkInTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'waiting'
-      }
+      },
+      healthJourney: [
+        {
+          id: `hj-checkin-${Date.now()}`,
+          date: "Today",
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          title: "Hospital OPD Kiosk Check-In",
+          type: "queue",
+          desc: `Token #${prev.appointment?.tokenNumber || 'A-08'} checked in at ${prev.appointment?.facilityName || 'District Hospital'}.`,
+          status: "completed",
+          icon: "Users"
+        },
+        ...prev.healthJourney
+      ]
     }));
     addToast('Check-in Successful', 'You are now checked in at the hospital OPD.', 'success');
   };
 
-  // 4. Feature: Advance Live Queue
+  // 8. Feature: Advance Live Queue
   const advanceQueue = () => {
     setPatientData(prev => {
       const currentPos = prev.appointment?.queuePosition || 8;
@@ -403,15 +537,66 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  // 5. Feature: Doctor Consultation Save
+  // 9. Feature: Doctor Consultation Save
   const saveConsultation = (updatedNotes, newPrescription, orderedTests, followUpDays = 7, createReferral = false) => {
     const followUpDate = new Date();
     followUpDate.setDate(followUpDate.getDate() + followUpDays);
     const dateStr = followUpDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     setPatientData(prev => {
-      const updatedPrescriptions = newPrescription ? [...prev.consultation.prescriptions, newPrescription] : prev.consultation.prescriptions;
-      const updatedTests = orderedTests || prev.consultation.testsOrdered;
+      const defaultRx = [
+        {
+          id: "rx-1",
+          medicineName: "Paracetamol 650mg",
+          type: "Tablet",
+          dosage: "1 tablet after meals",
+          frequency: "Thrice daily (8:00 AM, 2:00 PM, 8:00 PM)",
+          duration: "5 days",
+          instructions: "Take with water. Do not exceed 4g in 24 hours.",
+          status: "Active",
+          availableAtFacility: "District Hospital Pharmacy (Counter 2)",
+          reminders: [
+            { time: "08:00 AM", status: "taken", label: "Morning Dose" },
+            { time: "02:00 PM", status: "due", label: "Afternoon Dose" },
+            { time: "08:00 PM", status: "upcoming", label: "Night Dose" }
+          ]
+        },
+        {
+          id: "rx-2",
+          medicineName: "Oral Rehydration Salts (ORS)",
+          type: "Powder / Sachet",
+          dosage: "1 sachet in 1 Litre water",
+          frequency: "Sip throughout the day",
+          duration: "3 days",
+          instructions: "Maintain hydration.",
+          status: "Active",
+          availableAtFacility: "Free Govt Jan Aushadhi Counter",
+          reminders: [
+            { time: "11:00 AM", status: "taken", label: "Morning Hydration" },
+            { time: "04:00 PM", status: "upcoming", label: "Evening Hydration" }
+          ]
+        }
+      ];
+
+      const defaultTests = [
+        {
+          id: "test-order-1",
+          testName: "Complete Blood Count (CBC) with Platelets",
+          facility: "District Hospital Central Diagnostics",
+          urgency: "Standard OPD Lab",
+          status: "ready",
+          orderedDate: "Today, Processed",
+          results: {
+            hemoglobin: { value: "14.2", unit: "g/dL", range: "13.0 - 17.0", status: "Normal" },
+            wbc: { value: "6,400", unit: "/µL", range: "4,000 - 11,000", status: "Normal" },
+            platelets: { value: "185,000", unit: "/µL", range: "150,000 - 450,000", status: "Normal" }
+          },
+          doctorNotes: "Parameters within normal limits. Platelets safe at 185k. Continue symptomatic management."
+        }
+      ];
+
+      const updatedPrescriptions = newPrescription ? [...(prev.consultation?.prescriptions || []), newPrescription] : (prev.consultation?.prescriptions?.length ? prev.consultation.prescriptions : defaultRx);
+      const updatedTests = orderedTests || (prev.consultation?.testsOrdered?.length ? prev.consultation.testsOrdered : defaultTests);
 
       const updatedCarePlan = [
         {
@@ -420,7 +605,7 @@ export const AppProvider = ({ children }) => {
           desc: "Consulted with Dr. Priya Sharma at District Government Hospital (OPD Room 4)",
           status: "completed",
           targetScreen: "consultation",
-          date: "Just now"
+          date: "Today, Just now"
         },
         {
           id: "cp-2",
@@ -450,20 +635,25 @@ export const AppProvider = ({ children }) => {
 
       return {
         ...prev,
+        appointment: prev.appointment ? { ...prev.appointment, status: 'completed' } : null,
         consultation: {
-          ...prev.consultation,
           consulted: true,
           consultationTime: "Today, Just now",
-          clinicalNotes: updatedNotes || prev.consultation.clinicalNotes,
+          doctorName: "Dr. Priya Sharma",
+          doctorRole: "Senior Medical Specialist",
+          room: "OPD Room 4",
+          vitals: prev.consultation?.vitals || { bp: "118/78 mmHg", pulse: "84 bpm", temp: "100.8 °F", spo2: "98%" },
+          clinicalNotes: updatedNotes || "Patient examined. Low-grade pyrexia. Prescribed antipyretics and baseline CBC lab work.",
           prescriptions: updatedPrescriptions,
           testsOrdered: updatedTests,
           followUpDays,
-          followUpDate: dateStr
+          followUpDate: dateStr,
+          followUpReason: "General Medicine Review & Symptom Resolution"
         },
         carePlanItems: updatedCarePlan,
         healthJourney: [
           {
-            id: `hj-${Date.now()}`,
+            id: `hj-cons-${Date.now()}`,
             date: "Today",
             time: "Just now",
             title: "Doctor Consultation Completed & Rx Issued",
@@ -476,9 +666,9 @@ export const AppProvider = ({ children }) => {
         ],
         alerts: [
           {
-            id: `alt-${Date.now()}`,
+            id: `alt-rx-${Date.now()}`,
             title: "Prescription & Care Plan Updated",
-            message: `Dr. Priya Sharma added medicines and scheduled a follow-up for ${dateStr}.`,
+            message: `Dr. Priya Sharma issued medicines and scheduled a follow-up for ${dateStr}.`,
             type: "medicine",
             severity: "info",
             targetScreen: "care-plan",
@@ -493,10 +683,20 @@ export const AppProvider = ({ children }) => {
     addToast('Consultation Saved', 'Prescription, diagnostic tests, care plan, and reminders updated.', 'success');
   };
 
-  // 6. Feature: Upload / Generate Lab Report
+  // 10. Feature: Upload / Generate Lab Report
   const uploadLabReport = (testId) => {
     setPatientData(prev => {
-      const updatedTests = prev.consultation.testsOrdered.map(t => {
+      const tests = prev.consultation?.testsOrdered?.length ? prev.consultation.testsOrdered : [
+        {
+          id: "test-order-1",
+          testName: "Complete Blood Count (CBC) with Platelets",
+          facility: "District Hospital Central Diagnostics",
+          status: "ready",
+          orderedDate: "Today, Processed"
+        }
+      ];
+
+      const updatedTests = tests.map(t => {
         if (t.id === testId || testId === 'all') {
           return {
             ...t,
@@ -518,7 +718,7 @@ export const AppProvider = ({ children }) => {
             return {
               ...cp,
               title: "CBC Diagnostic Blood Test Completed",
-              desc: "Results: Normal (Platelets 185k). Doctor reviewed.",
+              desc: "Results: Normal (Platelets 185k). Verified by lab pathologist.",
               status: "completed",
               actionText: undefined
             };
@@ -532,7 +732,7 @@ export const AppProvider = ({ children }) => {
             time: "Just now",
             title: "CBC Blood Report Generated",
             type: "report",
-            desc: "Hemoglobin 14.2 g/dL, Platelets 185k (Normal). Doctor reviewed.",
+            desc: "Hemoglobin 14.2 g/dL, Platelets 185k (Normal). Verified by pathologist.",
             status: "completed",
             icon: "FileText"
           },
@@ -554,20 +754,21 @@ export const AppProvider = ({ children }) => {
       };
     });
 
-    addToast('Report Added Successfully', 'CBC report has been attached to your health journey.', 'success');
+    addToast('Report Attached', 'CBC diagnostic report attached to your health journey.', 'success');
   };
 
-  // 7. Feature: Medicine Reminder Action
+  // 11. Feature: Update Medicine Reminder
   const updateMedicineReminder = (prescriptionId, reminderIndex, newStatus) => {
     setPatientData(prev => {
-      const updatedRx = prev.consultation.prescriptions.map(rx => {
-        if (rx.id === prescriptionId) {
-          const updatedReminders = rx.reminders.map((rem, idx) => {
+      const rxList = prev.consultation?.prescriptions || [];
+      const updatedRx = rxList.map(rx => {
+        if (rx.id === prescriptionId || prescriptionId === 'rx-1') {
+          const updatedReminders = rx.reminders?.map((rem, idx) => {
             if (idx === reminderIndex) {
               return { ...rem, status: newStatus };
             }
             return rem;
-          });
+          }) || [];
           return { ...rx, reminders: updatedReminders };
         }
         return rx;
@@ -583,13 +784,174 @@ export const AppProvider = ({ children }) => {
     });
 
     if (newStatus === 'taken') {
-      addToast('Medicine Marked Taken', 'Great job adhering to your prescribed care plan!', 'success');
+      addToast('Medicine Taken', 'Dose recorded successfully in your care adherence log.', 'success');
     } else {
       addToast('Dose Skipped', 'Reminder marked as skipped.', 'warning');
     }
   };
 
-  // 8. Feature: Progress Referral Lifecycle
+  // 12. Feature: NEW CARE TRANSFER / TREATMENT CONTINUITY WORKFLOW
+  const initiateCareTransfer = (sourceFacilityName, destinationFacilityName, reason, selectedRecordsList = [], destinationFacId = 'fac-1') => {
+    const transferId = `TRF-MP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const newTransferRecord = {
+      hasTransfer: true,
+      transferId,
+      sourceFacilityName: sourceFacilityName || "Primary Health Centre (PHC) Kolar",
+      destinationFacilityId: destinationFacId,
+      destinationFacilityName: destinationFacilityName || "District Government Hospital, Central",
+      reason: reason || "Required diagnostic testing & specialist physician unavailable at current facility",
+      requestedAt: `Today, ${currentTimeStr}`,
+      currentStage: 3, // Records Received at Destination
+      stages: [
+        { stage: 0, title: "Transfer Requested", timestamp: `Today, ${currentTimeStr}`, done: true },
+        { stage: 1, title: "Records Selected & Encrypted", timestamp: `Today, ${currentTimeStr}`, done: true },
+        { stage: 2, title: "Records Dispatched to Destination", timestamp: `Today, ${currentTimeStr}`, done: true },
+        { stage: 3, title: `${destinationFacilityName} Received Records`, timestamp: `Today, ${currentTimeStr}`, done: true },
+        { stage: 4, title: "Care Continuation Accepted & OPD Ready", timestamp: "Pending Confirmation", done: false }
+      ],
+      status: "Records Received",
+      sharedRecords: selectedRecordsList,
+      transferredToken: "A-08"
+    };
+
+    setPatientData(prev => {
+      // Dynamic Care Plan updates reflecting Care Transfer
+      const updatedCarePlan = [
+        {
+          id: "cp-trf-1",
+          title: "Previous Consultation Completed",
+          desc: `Examined at ${sourceFacilityName || 'Previous Facility'}. Service unavailable for full treatment.`,
+          status: "completed",
+          targetScreen: "care-transfer",
+          date: "Completed"
+        },
+        {
+          id: "cp-trf-2",
+          title: `Health Records Transferred to ${destinationFacilityName}`,
+          desc: `${selectedRecordsList.length} clinical records shared with patient consent.`,
+          status: "completed",
+          targetScreen: "care-transfer",
+          date: "Transferred"
+        },
+        {
+          id: "cp-trf-3",
+          title: `Visit ${destinationFacilityName} for Continuing Care`,
+          desc: `Assigned OPD Room 4 with digital token #A-08. Transferred records ready for doctor.`,
+          status: "current",
+          targetScreen: "live-queue",
+          actionText: "View Queue Token"
+        },
+        {
+          id: "cp-trf-4",
+          title: "Continue Prescribed Medication & Follow-up",
+          desc: "Adhere to ongoing antipyretic schedule and hydration therapy.",
+          status: "upcoming",
+          targetScreen: "medicine-reminders",
+          date: "In 5 Days"
+        }
+      ];
+
+      return {
+        ...prev,
+        careTransfer: newTransferRecord,
+        carePlanItems: updatedCarePlan,
+        healthJourney: [
+          {
+            id: `hj-trf-${Date.now()}`,
+            date: "Today",
+            time: currentTimeStr,
+            title: `Care Transferred to ${destinationFacilityName}`,
+            type: "transfer",
+            desc: `Reason: ${reason || 'Service unavailable at previous clinic'}. ${selectedRecordsList.length} records shared with patient consent.`,
+            status: "completed",
+            icon: "Share2"
+          },
+          ...prev.healthJourney
+        ],
+        alerts: [
+          {
+            id: `alt-trf-${Date.now()}`,
+            title: "Care Transfer Initiated",
+            message: `Your records have been safely transmitted to ${destinationFacilityName}.`,
+            type: "transfer",
+            severity: "success",
+            targetScreen: "care-transfer",
+            timestamp: "Just now",
+            read: false
+          },
+          ...prev.alerts
+        ]
+      };
+    });
+
+    addToast('Care Transfer Initiated', `Records dispatched to ${destinationFacilityName}.`, 'success');
+  };
+
+  // 13. Feature: Advance Care Transfer Stage
+  const advanceTransferStage = () => {
+    setPatientData(prev => {
+      if (!prev.careTransfer) return prev;
+      const current = prev.careTransfer.currentStage;
+      const nextStage = Math.min(4, current + 1);
+      const stageTitles = ["Transfer Requested", "Records Prepared", "Records Sent", "Records Received", "Care Continuation Accepted"];
+      const newStatus = stageTitles[nextStage];
+
+      const updatedStages = prev.careTransfer.stages?.map((s, idx) => ({
+        ...s,
+        done: idx <= nextStage,
+        timestamp: idx === nextStage ? "Just now" : s.timestamp
+      })) || [];
+
+      addToast('Transfer Status Updated', `Care transfer advanced to "${newStatus}"`, 'success');
+
+      return {
+        ...prev,
+        careTransfer: {
+          ...prev.careTransfer,
+          currentStage: nextStage,
+          status: newStatus,
+          stages: updatedStages
+        }
+      };
+    });
+  };
+
+  // 14. Feature: Hospital Staff Accepts Care Transfer
+  const acceptCareTransfer = (transferId) => {
+    setPatientData(prev => {
+      if (!prev.careTransfer) return prev;
+      const updatedStages = prev.careTransfer.stages?.map(s => ({ ...s, done: true })) || [];
+
+      return {
+        ...prev,
+        careTransfer: {
+          ...prev.careTransfer,
+          currentStage: 4,
+          status: "Care Continuation Accepted",
+          stages: updatedStages
+        },
+        alerts: [
+          {
+            id: `alt-trf-acc-${Date.now()}`,
+            title: "Care Transfer Accepted by Hospital",
+            message: `${prev.careTransfer.destinationFacilityName} has accepted your transfer. Your OPD Token is active.`,
+            type: "transfer",
+            severity: "success",
+            targetScreen: "live-queue",
+            timestamp: "Just now",
+            read: false
+          },
+          ...prev.alerts
+        ]
+      };
+    });
+
+    addToast('Transfer Accepted', 'Patient admitted to incoming OPD intake queue.', 'success');
+  };
+
+  // 15. Feature: Progress Referral Lifecycle
   const progressReferralStage = () => {
     setPatientData(prev => {
       const nextStage = Math.min(4, (prev.referral?.currentStage || 0) + 1);
@@ -601,7 +963,7 @@ export const AppProvider = ({ children }) => {
         done: idx <= nextStage
       })) || [];
 
-      addToast('Referral Updated', `Referral status advanced to "${newStatus}"`, 'success');
+      addToast('Referral Updated', `Referral advanced to "${newStatus}"`, 'success');
 
       return {
         ...prev,
@@ -615,7 +977,7 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  // 9. Feature: Follow-Up & Missed Follow-Up Trigger
+  // 16. Feature: Trigger Missed Follow-up
   const triggerMissedFollowUp = () => {
     setPatientData(prev => ({
       ...prev,
@@ -623,7 +985,7 @@ export const AppProvider = ({ children }) => {
         {
           id: `alt-missed-${Date.now()}`,
           title: "FOLLOW-UP MISSED",
-          message: "Your scheduled follow-up was missed. Contact your ASHA health worker or reschedule your appointment.",
+          message: "Your scheduled follow-up was missed. Contact your ASHA health worker or re-book your appointment.",
           type: "followup",
           severity: "warning",
           targetScreen: "follow-up",
@@ -633,17 +995,19 @@ export const AppProvider = ({ children }) => {
         ...prev.alerts
       ]
     }));
-    addToast('Follow-up Missed Alert Generated', 'Alert sent to patient and assigned ASHA worker.', 'warning');
+    addToast('Missed Follow-up Alert Triggered', 'Alert dispatched to patient and assigned ASHA worker.', 'warning');
   };
 
-  // Reset demo data
+  // Reset Demo Data
   const resetDemoData = () => {
-    setPatientData(initialPatientData);
+    setPatientData(demoPatientData);
     setFacilities(mockFacilities);
     setSelectedFacility(mockFacilities[0]);
-    localStorage.removeItem('swasthya_patient_state');
-    localStorage.removeItem('swasthya_facilities_state');
-    addToast('Demo Data Reset', 'Prototype restored to default Arun Kumar state.', 'info');
+    setIsDemoMode(true);
+    localStorage.setItem('swasthya_patient_state', JSON.stringify(demoPatientData));
+    localStorage.setItem('swasthya_facilities_state', JSON.stringify(mockFacilities));
+    localStorage.setItem('swasthya_is_demo', 'true');
+    addToast('Demo State Reset', 'Arun Kumar presentation state restored.', 'info');
   };
 
   const t = translations[language] || translations.en;
@@ -651,6 +1015,8 @@ export const AppProvider = ({ children }) => {
   const value = {
     isAuthenticated,
     setIsAuthenticated,
+    isDemoMode,
+    setIsDemoMode,
     userRole,
     setUserRole,
     currentPath: location.pathname,
@@ -687,6 +1053,7 @@ export const AppProvider = ({ children }) => {
     playAudioChime,
     speakText,
     startDemoJourney,
+    registerUser,
     loginUser,
     logoutUser,
     submitSymptoms,
@@ -696,6 +1063,9 @@ export const AppProvider = ({ children }) => {
     saveConsultation,
     uploadLabReport,
     updateMedicineReminder,
+    initiateCareTransfer,
+    advanceTransferStage,
+    acceptCareTransfer,
     progressReferralStage,
     triggerMissedFollowUp,
     resetDemoData
@@ -711,3 +1081,5 @@ export const useApp = () => {
   }
   return context;
 };
+
+export default AppContext;

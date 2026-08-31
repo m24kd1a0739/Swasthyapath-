@@ -31,14 +31,14 @@ export const HealthWorkerDashboard = () => {
   const [patients, setPatients] = useState([
     {
       id: 'p-1',
-      name: patientData.profile.fullName || 'Arun Kumar',
-      age: 32,
-      gender: 'Male',
+      name: patientData.profile.fullName || 'Active Patient',
+      age: patientData.profile.age || 32,
+      gender: patientData.profile.gender || 'Male',
       abha: patientData.profile.abhaId,
       priority: 'Normal',
       facility: 'District Govt Hospital',
-      journeyStatus: 'OPD Consulted • CBC Normal • Rx Active',
-      contact: patientData.profile.mobile,
+      journeyStatus: patientData.symptoms?.text ? `Concern: "${patientData.symptoms.text}" • Care Active` : 'OPD Consulted • CBC Normal • Rx Active',
+      contact: patientData.profile.mobile || '+91 98765 43210',
       lastContacted: 'Today, 10:15 AM',
       hasMissed: false
     },
@@ -321,7 +321,7 @@ export const HealthWorkerDashboard = () => {
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             {[
-              { task: 'Verify Arun Kumar fever resolution & medicine compliance', done: true },
+              { task: `Verify ${patientData.profile.fullName || 'Patient'} fever resolution & medicine compliance`, done: true },
               { task: 'Follow up with Meena Devi for missed BP check at PHC Kolar', done: false },
               { task: 'Distribute ORS packets to Ward 14 Anganwadi Centre', done: false }
             ].map((t, i) => (

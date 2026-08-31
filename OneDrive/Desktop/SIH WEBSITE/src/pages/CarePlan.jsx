@@ -62,7 +62,7 @@ export const CarePlan = () => {
               {t.carePlan}
             </h2>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-              Core focus: <strong>“What should I do next?”</strong> • Dynamic clinical checklist for Arun Kumar
+              Core focus: <strong>“What should I do next?”</strong> • Dynamic clinical checklist for {patientData.profile?.fullName || 'Citizen'}
             </p>
           </div>
 

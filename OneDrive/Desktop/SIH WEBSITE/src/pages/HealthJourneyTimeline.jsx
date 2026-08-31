@@ -36,6 +36,7 @@ export const HealthJourneyTimeline = () => {
       case 'queue': return Users;
       case 'triage': return Cpu;
       case 'referral': return Share2;
+      case 'transfer': return Share2;
       default: return Milestone;
     }
   };
@@ -70,7 +71,7 @@ export const HealthJourneyTimeline = () => {
               {t.healthJourney}
             </h2>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-              Connected continuum for <strong>{patientData.profile.fullName} (32 M)</strong> • Case: Fever for 3 days
+              Connected continuum for <strong>{patientData.profile.fullName || 'Citizen'} ({patientData.profile.age || 32} {patientData.profile.gender?.[0] || 'M'})</strong> • ABHA: {patientData.profile.abhaId}
             </p>
           </div>
 
@@ -105,6 +106,7 @@ export const HealthJourneyTimeline = () => {
                     else if (evt.type === 'followup') navigateTo('follow-up');
                     else if (evt.type === 'triage') navigateTo('triage');
                     else if (evt.type === 'queue') navigateTo('live-queue');
+                    else if (evt.type === 'transfer') navigateTo('care-transfer');
                   }}
                   style={{
                     background: isUpcoming ? 'linear-gradient(to right, var(--primary-surface), var(--bg-card))' : 'var(--bg-card)',

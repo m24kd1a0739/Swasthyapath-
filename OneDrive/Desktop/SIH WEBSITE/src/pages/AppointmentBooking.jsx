@@ -167,7 +167,7 @@ export const AppointmentBooking = () => {
                 justifyContent: 'space-between'
               }}>
                 <div>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>Patient: {patientData.profile.fullName} (32 M)</div>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>Patient: {patientData.profile.fullName || 'Citizen'} ({patientData.profile.age || 32} {patientData.profile.gender?.[0] || 'M'})</div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>ABHA ID: {patientData.profile.abhaId} • {patientData.profile.mobile}</div>
                 </div>
                 <span className="badge badge-primary">Free Govt Booking</span>

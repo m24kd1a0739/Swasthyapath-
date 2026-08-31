@@ -205,7 +205,7 @@ export const TestsAndReports = () => {
               <div className="modal-body">
                 {/* Patient Bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--bg-surface)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', marginBottom: '1.25rem' }}>
-                  <div><strong>Patient:</strong> {patientData.profile.fullName} (32/M)</div>
+                  <div><strong>Patient:</strong> {patientData.profile.fullName || 'Citizen'} ({patientData.profile.age || 32}/{patientData.profile.gender?.[0] || 'M'})</div>
                   <div><strong>Ref Doctor:</strong> Dr. Priya Sharma</div>
                   <div><strong>Date:</strong> Aug 30, 2026</div>
                 </div>

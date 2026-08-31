@@ -13,11 +13,11 @@ import {
   CheckSquare, 
   Calendar, 
   UserCircle,
-  RotateCcw,
-  Sparkles,
-  Users,
   ShieldAlert,
-  Activity
+  Activity,
+  LogOut,
+  Sparkles,
+  Play
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -25,6 +25,8 @@ export const Sidebar = () => {
     currentPath, 
     navigateTo, 
     patientData, 
+    isDemoMode,
+    startDemoJourney,
     resetDemoData, 
     setDemoTourActive, 
     demoTourActive,
@@ -33,183 +35,200 @@ export const Sidebar = () => {
     setUserRole
   } = useApp();
 
-  const navItems = [
-    { id: 'dashboard', path: '/home', label: 'Home Dashboard', icon: Home },
-    { id: 'symptoms', path: '/health-problem', label: 'Health Problem / Triage', icon: Stethoscope },
-    { id: 'facilities', path: '/facilities', label: 'Government Facilities', icon: Building2 },
-    { id: 'live-queue', path: '/queue', label: 'Appointment & Queue', icon: CalendarClock },
-    { id: 'consultation', path: '/consultation', label: 'Doctor Consultation', icon: Activity },
-    { id: 'tests', path: '/tests-reports', label: 'Tests & Lab Reports', icon: FlaskConical },
-    { id: 'medicines', path: '/medicines', label: 'Medicine Availability', icon: Pill },
-    { id: 'medicine-reminders', path: '/medicine-reminder', label: 'Medicine Reminder', icon: BellRing },
-    { id: 'care-plan', path: '/care-plan', label: 'My Care Plan', icon: CheckSquare },
-    { id: 'referrals', path: '/referrals', label: 'Referral Tracking', icon: Share2 },
-    { id: 'follow-up', path: '/follow-up', label: 'Follow-up Management', icon: Calendar },
-    { id: 'journey', path: '/health-journey', label: 'My Health Journey', icon: Milestone },
-    { id: 'alerts', path: '/notifications', label: 'Smart Health Alerts', icon: BellRing },
-    { id: 'account', path: '/account', label: 'Account & Caregiver', icon: UserCircle }
+  const fullName = patientData.profile?.fullName || 'Citizen';
+  const abhaId = patientData.profile?.abhaId || '91-8472-9102-4821';
+  
+  // Compute initials
+  const initials = fullName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'SP';
+
+  // Grouped Clean Patient Navigation (Requirements 18 & 19)
+  const navSections = [
+    {
+      title: 'HOME',
+      items: [
+        { id: 'dashboard', path: '/home', label: 'Home', icon: Home }
+      ]
+    },
+    {
+      title: 'CARE',
+      items: [
+        { id: 'symptoms', path: '/health-problem', label: 'My Health Problem', icon: Stethoscope },
+        { id: 'facilities', path: '/facilities', label: 'Find a Facility', icon: Building2 },
+        { id: 'live-queue', path: '/queue', label: 'Appointments & Queue', icon: CalendarClock }
+      ]
+    },
+    {
+      title: 'MY HEALTH',
+      items: [
+        { id: 'journey', path: '/health-journey', label: 'Health Journey', icon: Milestone },
+        { id: 'tests', path: '/tests-reports', label: 'Tests & Reports', icon: FlaskConical },
+        { id: 'medicines', path: '/medicines', label: 'Medicines & Stock', icon: Pill },
+        { id: 'medicine-reminders', path: '/medicine-reminder', label: 'Medicine Reminders', icon: BellRing },
+        { id: 'care-plan', path: '/care-plan', label: 'My Care Plan', icon: CheckSquare },
+        { id: 'follow-up', path: '/follow-up', label: 'Follow-up Review', icon: Calendar }
+      ]
+    },
+    {
+      title: 'CONTINUITY & SUPPORT',
+      items: [
+        { id: 'care-transfer', path: '/care-transfer', label: 'Care Transfer', icon: Share2, isNew: true },
+        { id: 'alerts', path: '/notifications', label: 'Notifications', icon: BellRing },
+        { id: 'account', path: '/account', label: 'Account & Family', icon: UserCircle }
+      ]
+    }
   ];
 
   return (
     <aside className="sidebar-container">
+      
       {/* Patient Profile Card Header */}
-      <div style={{ padding: '1.25rem 1.25rem 0.75rem', borderBottom: '1px solid var(--border-light)' }}>
+      <div style={{ padding: '1.25rem 1.15rem 0.85rem', borderBottom: '1px solid var(--border-light)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
             width: '42px',
             height: '42px',
             borderRadius: 'var(--radius-full)',
-            background: 'var(--primary-surface)',
-            border: '2px solid var(--primary)',
-            color: 'var(--primary)',
+            background: isDemoMode ? 'linear-gradient(135deg, #0D9488, #0284C7)' : 'var(--primary-surface)',
+            border: `2px solid ${isDemoMode ? '#0284C7' : 'var(--primary)'}`,
+            color: isDemoMode ? 'white' : 'var(--primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 800,
-            fontSize: '1.05rem'
+            fontSize: '1rem',
+            flexShrink: 0
           }}>
-            AK
+            {initials}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {patientData.profile.fullName}
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {fullName}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              ABHA: {patientData.profile.abhaId.slice(0, 10)}...
+              ABHA: {abhaId.slice(0, 10)}...
             </div>
           </div>
         </div>
 
-        {/* Current Active Status Pill */}
+        {/* Demo Mode or Account Status Pill */}
         <div style={{
-          marginTop: '0.75rem',
-          padding: '0.35rem 0.65rem',
-          background: 'var(--primary-surface)',
+          marginTop: '0.65rem',
+          padding: '0.3rem 0.6rem',
+          background: isDemoMode ? '#FEF08A' : 'var(--primary-surface)',
           borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--primary-border)',
+          border: `1px solid ${isDemoMode ? '#FACC15' : 'var(--primary-border)'}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: '0.75rem'
+          fontSize: '0.72rem'
         }}>
-          <span style={{ color: 'var(--primary-text)', fontWeight: 600 }}>Active Care:</span>
-          <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>OPD / Lab Stage</span>
+          <span style={{ color: isDemoMode ? '#854D0E' : 'var(--primary-text)', fontWeight: 700 }}>
+            {isDemoMode ? 'Demo Journey Active' : 'National Health Grid'}
+          </span>
+          <span className={`badge ${isDemoMode ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.62rem', padding: '0.1rem 0.35rem' }}>
+            {isDemoMode ? 'Arun Kumar' : 'Verified ✓'}
+          </span>
         </div>
       </div>
 
-      {/* Navigation List */}
+      {/* Navigation List (Streamlined for Patient) */}
       <div style={{ flex: 1, padding: '0.75rem 0.6rem', overflowY: 'auto' }}>
-        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', padding: '0 0.6rem 0.4rem', letterSpacing: '0.05em' }}>
-          Patient Navigation
-        </div>
+        {navSections.map(section => (
+          <div key={section.title} style={{ marginBottom: '0.85rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-subtle)', textTransform: 'uppercase', padding: '0 0.6rem 0.35rem', letterSpacing: '0.06em' }}>
+              {section.title}
+            </div>
 
-        {navItems.map(item => {
-          const Icon = item.icon;
-          const isActive = currentPath === item.path || (item.id === 'dashboard' && currentPath === '/dashboard') || (item.id === 'symptoms' && currentPath === '/symptoms') || (item.id === 'live-queue' && (currentPath === '/live-queue' || currentPath === '/check-in')) || (item.id === 'tests' && currentPath === '/tests') || (item.id === 'alerts' && currentPath === '/alerts');
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (userRole !== 'patient') setUserRole('patient');
-                navigateTo(item.path);
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.6rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.86rem',
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? 'var(--primary-text)' : 'var(--text-main)',
-                backgroundColor: isActive ? 'var(--primary-surface)' : 'transparent',
-                border: isActive ? '1px solid var(--primary-border)' : '1px solid transparent',
-                marginBottom: '0.15rem',
-                transition: 'all var(--transition-fast)',
-                textAlign: 'left'
-              }}
-            >
-              <Icon size={18} color={isActive ? 'var(--primary)' : 'var(--text-muted)'} />
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.id === 'live-queue' && (
-                <span className="badge badge-warning" style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}>
-                  #{patientData.appointment?.tokenNumber || '08'}
-                </span>
-              )}
-              {item.id === 'medicine-reminders' && (
-                <span className="badge badge-danger" style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}>
-                  Due 2PM
-                </span>
-              )}
-            </button>
-          );
-        })}
+            {section.items.map(item => {
+              const Icon = item.icon;
+              const isActive = currentPath === item.path || 
+                (item.id === 'dashboard' && currentPath === '/dashboard') || 
+                (item.id === 'symptoms' && currentPath === '/symptoms') || 
+                (item.id === 'live-queue' && (currentPath === '/live-queue' || currentPath === '/check-in')) || 
+                (item.id === 'tests' && currentPath === '/tests') || 
+                (item.id === 'alerts' && currentPath === '/alerts') ||
+                (item.id === 'care-transfer' && currentPath === '/transfer-care');
 
-        {/* Administration / Staff Quick Links */}
-        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', padding: '0.8rem 0.6rem 0.4rem', letterSpacing: '0.05em' }}>
-          Healthcare Staff Roles
-        </div>
-
-        {[
-          { id: 'health-worker', path: '/health-worker', label: 'ASHA Health Worker', role: 'health-worker', icon: Users },
-          { id: 'facility-staff', path: '/facility-staff', label: 'Hospital OPD & Lab Staff', role: 'facility-staff', icon: Building2 },
-          { id: 'admin', path: '/admin', label: 'District Admin Officer', role: 'admin', icon: Activity }
-        ].map(roleItem => {
-          const Icon = roleItem.icon;
-          const isActive = currentPath === roleItem.path;
-          return (
-            <button
-              key={roleItem.id}
-              onClick={() => {
-                setUserRole(roleItem.role);
-                navigateTo(roleItem.path);
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.55rem 0.75rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.82rem',
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? 'var(--purple-text)' : 'var(--text-muted)',
-                backgroundColor: isActive ? 'var(--purple-surface)' : 'transparent',
-                border: isActive ? '1px solid var(--purple-border)' : '1px solid transparent',
-                marginBottom: '0.15rem'
-              }}
-            >
-              <Icon size={16} />
-              <span>{roleItem.label}</span>
-            </button>
-          );
-        })}
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    if (userRole !== 'patient') setUserRole('patient');
+                    navigateTo(item.path);
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.86rem',
+                    fontWeight: isActive ? 700 : 500,
+                    color: isActive ? 'var(--primary-text)' : 'var(--text-main)',
+                    backgroundColor: isActive ? 'var(--primary-surface)' : 'transparent',
+                    border: isActive ? '1px solid var(--primary-border)' : '1px solid transparent',
+                    marginBottom: '0.12rem',
+                    transition: 'all var(--transition-fast)',
+                    textAlign: 'left'
+                  }}
+                >
+                  <Icon size={17} color={isActive ? 'var(--primary)' : 'var(--text-muted)'} />
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.isNew && (
+                    <span className="badge badge-primary" style={{ fontSize: '0.62rem', padding: '0.05rem 0.35rem' }}>
+                      NEW
+                    </span>
+                  )}
+                  {item.id === 'live-queue' && patientData.appointment?.tokenNumber && (
+                    <span className="badge badge-warning" style={{ fontSize: '0.62rem', padding: '0.05rem 0.3rem' }}>
+                      #{patientData.appointment.tokenNumber}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
-      {/* Sidebar Footer Controls */}
-      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+      {/* Persistent Bottom Controls: Emergency SOS & Staff Portal Access */}
+      <div style={{ padding: '0.75rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-subtle)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        
+        {/* Emergency SOS Button (Always separated & visible) */}
         <button 
-          className="btn btn-secondary btn-sm"
-          style={{ width: '100%', justifyContent: 'center', fontSize: '0.78rem' }}
-          onClick={() => {
-            setDemoTourActive(!demoTourActive);
-          }}
+          className="btn btn-danger"
+          style={{ width: '100%', justifyContent: 'center', fontWeight: 800, padding: '0.55rem', boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)' }}
+          onClick={() => setEmergencyModalOpen(true)}
         >
-          <Sparkles size={14} color="var(--primary)" />
-          <span>{demoTourActive ? 'Hide SIH Tour' : 'SIH Demo Presentation'}</span>
+          <ShieldAlert size={16} />
+          <span>Emergency SOS (108)</span>
         </button>
 
-        <button 
-          className="btn btn-ghost btn-sm"
-          style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', color: 'var(--text-subtle)' }}
-          onClick={resetDemoData}
-          title="Reset Arun Kumar demo journey to start"
-        >
-          <RotateCcw size={13} />
-          <span>Reset Arun Demo State</span>
-        </button>
+        {/* Discreet Staff Portal Switcher Link */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0.35rem', fontSize: '0.74rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Staff & Admin:</span>
+          <button 
+            type="button"
+            className="btn-ghost btn-sm"
+            style={{ color: 'var(--purple-text)', fontWeight: 700, padding: 0 }}
+            onClick={() => {
+              setUserRole('facility-staff');
+              navigateTo('/facility-staff');
+            }}
+          >
+            Open Staff Portal →
+          </button>
+        </div>
+
       </div>
     </aside>
   );
 };
+
+export default Sidebar;

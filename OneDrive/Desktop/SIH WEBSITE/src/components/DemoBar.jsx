@@ -35,9 +35,10 @@ export const DemoBar = () => {
     { step: 15, title: '15. Pharmacy Stock', path: '/medicines', role: 'patient', desc: 'Government pharmacy stock & generic search' },
     { step: 16, title: '16. Medicine Reminder', path: '/medicine-reminder', role: 'patient', desc: 'Prescription-linked schedule with 2 PM dose due' },
     { step: 17, title: '17. My Care Plan', path: '/care-plan', role: 'patient', desc: 'Dynamic "What should I do next?" checklist' },
-    { step: 18, title: '18. Referral Tracking', path: '/referrals', role: 'patient', desc: 'End-to-end 5-stage referral lifecycle' },
-    { step: 19, title: '19. Health Journey', path: '/health-journey', role: 'patient', desc: 'Complete longitudinal timeline' },
-    { step: 20, title: '20. Staff & Admin Roles', path: '/health-worker', role: 'health-worker', desc: 'ASHA worker, OPD staff, and District Admin views' }
+    { step: 18, title: '18. Care Transfer & Records', path: '/care-transfer', role: 'patient', desc: 'Patient-consented inter-facility care continuity & record sharing' },
+    { step: 19, title: '19. Referral Tracking', path: '/referrals', role: 'patient', desc: 'End-to-end 5-stage referral lifecycle' },
+    { step: 20, title: '20. Health Journey', path: '/health-journey', role: 'patient', desc: 'Complete longitudinal timeline with transfer milestones' },
+    { step: 21, title: '21. Staff & Admin Roles', path: '/facility-staff', role: 'facility-staff', desc: 'OPD staff incoming care transfers, ASHA desk, and District Command' }
   ];
 
   const currentStepData = demoSteps.find(s => s.step === demoStep) || demoSteps[0];

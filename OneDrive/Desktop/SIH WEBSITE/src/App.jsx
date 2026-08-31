@@ -28,6 +28,7 @@ import { MedicineAvailability } from './pages/MedicineAvailability';
 import { MedicineReminder } from './pages/MedicineReminder';
 import { SmartAlertsCenter } from './pages/SmartAlertsCenter';
 import { CarePlan } from './pages/CarePlan';
+import { CareTransfer } from './pages/CareTransfer';
 import { HealthJourneyTimeline } from './pages/HealthJourneyTimeline';
 import { FollowUpManager } from './pages/FollowUpManager';
 import { HealthWorkerDashboard } from './pages/HealthWorkerDashboard';
@@ -105,8 +106,10 @@ export function App() {
             <Route path="/medicine-reminder" element={<MedicineReminder />} />
             <Route path="/medicine-reminders" element={<MedicineReminder />} />
 
-            {/* 11. My Care Plan Route */}
+            {/* 11. My Care Plan & Care Transfer Routes */}
             <Route path="/care-plan" element={<CarePlan />} />
+            <Route path="/care-transfer" element={<CareTransfer />} />
+            <Route path="/transfer-care" element={<CareTransfer />} />
 
             {/* 12. Health Journey Timeline Route */}
             <Route path="/health-journey" element={<HealthJourneyTimeline />} />

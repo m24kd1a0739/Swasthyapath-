@@ -18,7 +18,8 @@ export const OtpPage = () => {
     playAudioChime 
   } = useApp();
 
-  const [otp, setOtp] = useState(['1', '2', '3', '4', '5', '6']); // Pre-filled for demo convenience
+  // Clean empty OTP input array by default
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(30);
   const [errorMsg, setErrorMsg] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -34,8 +35,10 @@ export const OtpPage = () => {
   }, [countdown]);
 
   const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      const digits = value.slice(0, 6).split('');
+    const cleanVal = value.replace(/\D/g, '');
+
+    if (cleanVal.length > 1) {
+      const digits = cleanVal.slice(0, 6).split('');
       const newOtp = [...otp];
       digits.forEach((d, i) => { if (i < 6) newOtp[i] = d; });
       setOtp(newOtp);
@@ -43,18 +46,18 @@ export const OtpPage = () => {
     }
 
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = cleanVal;
     setOtp(newOtp);
 
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-page-digit-${index + 1}`);
+    if (cleanVal && index < 5) {
+      const nextInput = document.getElementById(`otp-digit-${index + 1}`);
       if (nextInput) nextInput.focus();
     }
   };
 
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-page-digit-${index - 1}`);
+      const prevInput = document.getElementById(`otp-digit-${index - 1}`);
       if (prevInput) prevInput.focus();
     }
   };
@@ -91,6 +94,10 @@ export const OtpPage = () => {
     addToast('Demo OTP Filled', '123456', 'info');
   };
 
+  const displayPhone = pendingRegData.mobile 
+    ? `+91 ${pendingRegData.mobile}` 
+    : '+91 98765 43210';
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '480px', margin: '2rem auto', padding: '0 1rem' }}>
       
@@ -122,14 +129,14 @@ export const OtpPage = () => {
           <ShieldCheck size={30} />
         </div>
 
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+        <h2 style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
           OTP Verification
         </h2>
         <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-          Enter the 6-digit verification code sent to <strong>+91 {pendingRegData.mobile || '9876543210'}</strong>
+          Enter the 6-digit verification code sent to <strong>{displayPhone}</strong>
         </p>
 
-        {/* Demo Indicator Box */}
+        {/* Demo Helper Box */}
         <div style={{
           background: 'var(--bg-surface)',
           borderRadius: 'var(--radius-md)',
@@ -158,8 +165,9 @@ export const OtpPage = () => {
             {otp.map((digit, idx) => (
               <input
                 key={idx}
-                id={`otp-page-digit-${idx}`}
+                id={`otp-digit-${idx}`}
                 type="text"
+                inputMode="numeric"
                 maxLength={1}
                 value={digit}
                 onChange={e => handleOtpChange(idx, e.target.value)}
@@ -202,7 +210,7 @@ export const OtpPage = () => {
               disabled={countdown > 0}
               onClick={() => {
                 setCountdown(30);
-                addToast('OTP Resent', 'A fresh 6-digit code has been dispatched.', 'info');
+                addToast('OTP Resent', `A fresh 6-digit code has been sent to ${displayPhone}.`, 'info');
               }}
               style={{ color: countdown === 0 ? 'var(--primary)' : 'var(--text-subtle)', fontWeight: 600 }}
             >
@@ -216,7 +224,7 @@ export const OtpPage = () => {
             style={{ width: '100%' }}
             disabled={isVerifying}
           >
-            <span>{isVerifying ? 'Verifying OTP...' : 'Verify & Continue'}</span>
+            <span>{isVerifying ? 'Verifying Code...' : 'Verify & Continue'}</span>
             <ArrowRight size={17} />
           </button>
         </form>
@@ -225,3 +233,5 @@ export const OtpPage = () => {
     </div>
   );
 };
+
+export default OtpPage;

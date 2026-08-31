@@ -5,7 +5,6 @@ import {
   MapPin, 
   Bell, 
   Globe, 
-  AlertTriangle, 
   User, 
   Sun, 
   Moon, 
@@ -15,7 +14,9 @@ import {
   WifiOff, 
   RefreshCw, 
   ShieldAlert,
-  ChevronDown
+  ChevronDown,
+  Sparkles,
+  Play
 } from 'lucide-react';
 
 export const Header = () => {
@@ -25,6 +26,8 @@ export const Header = () => {
     setLanguage, 
     userRole, 
     setUserRole, 
+    isDemoMode,
+    startDemoJourney,
     highContrast, 
     setHighContrast, 
     fontSize, 
@@ -34,7 +37,6 @@ export const Header = () => {
     setEmergencyModalOpen, 
     patientData, 
     navigateTo, 
-    currentScreen,
     speakText,
     addToast
   } = useApp();
@@ -42,6 +44,8 @@ export const Header = () => {
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
+  const fullName = patientData.profile?.fullName || 'Citizen';
+  const firstName = fullName.split(' ')[0] || fullName;
   const unreadAlertsCount = patientData.alerts?.filter(a => !a.read).length || 0;
 
   const cycleFontSize = () => {
@@ -53,14 +57,14 @@ export const Header = () => {
   const toggleNetwork = () => {
     if (networkStatus === 'online') {
       setNetworkStatus('offline');
-      addToast('Offline Mode Active', 'You are working offline. Changes will sync locally.', 'warning');
+      addToast('Offline Mode Active', 'You are working offline. Records saved locally on device.', 'warning');
     } else if (networkStatus === 'offline') {
       setNetworkStatus('syncing');
-      addToast('Syncing Changes...', 'Uploading offline records to the state health grid.', 'info');
+      addToast('Syncing Changes...', 'Uploading offline records to state health grid...', 'info');
       setTimeout(() => {
         setNetworkStatus('online');
-        addToast('Synced Successfully', 'All local health records are now synchronized.', 'success');
-      }, 1500);
+        addToast('Synced Successfully', 'All local health records synchronized.', 'success');
+      }, 1200);
     }
   };
 
@@ -89,7 +93,9 @@ export const Header = () => {
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
               {t.brandName}
             </span>
-            <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>Govt / SIH</span>
+            <span className="badge badge-primary" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem' }}>
+              Govt / SIH
+            </span>
           </div>
           <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1 }}>{t.tagline}</p>
         </div>
@@ -98,7 +104,9 @@ export const Header = () => {
       {/* Location Badge (Desktop) */}
       <div className="desktop-only" style={{ alignItems: 'center', gap: '0.4rem', background: 'var(--bg-surface)', padding: '0.35rem 0.8rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-light)' }}>
         <MapPin size={15} color="var(--primary)" />
-        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>{t.locationDefault}</span>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
+          {patientData.profile?.location || t.locationDefault}
+        </span>
       </div>
 
       {/* Action Controls */}
@@ -148,7 +156,7 @@ export const Header = () => {
         {/* Accessibility: Read Aloud */}
         <button 
           className="btn-icon desktop-only" 
-          onClick={() => speakText("SwasthyaPath public healthcare navigation. Hello Arun. Your next recommended step is taking Paracetamol at 2 PM, followed by review on September 4.")} 
+          onClick={() => speakText(`SwasthyaPath public healthcare navigation. Hello ${firstName}. Welcome to your connected public healthcare portal.`)} 
           title="Read Aloud Screen Summary"
           style={{ background: 'var(--bg-surface)' }}
         >
@@ -176,7 +184,7 @@ export const Header = () => {
               border: '1px solid var(--border-light)',
               borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-lg)',
-              minWidth: '130px',
+              minWidth: '140px',
               zIndex: 200,
               overflow: 'hidden'
             }}>
@@ -210,7 +218,7 @@ export const Header = () => {
           )}
         </div>
 
-        {/* Role Switcher */}
+        {/* Role & User Switcher */}
         <div style={{ position: 'relative' }} className="desktop-only">
           <button 
             className="btn btn-secondary btn-sm"
@@ -225,7 +233,7 @@ export const Header = () => {
           >
             <User size={15} />
             <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>
-              {userRole === 'patient' && 'Patient: Arun'}
+              {userRole === 'patient' && `${fullName} (Patient)`}
               {userRole === 'health-worker' && 'ASHA Worker'}
               {userRole === 'facility-staff' && 'OPD Staff'}
               {userRole === 'admin' && 'District Admin'}
@@ -242,18 +250,18 @@ export const Header = () => {
               border: '1px solid var(--border-light)',
               borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-lg)',
-              minWidth: '200px',
+              minWidth: '220px',
               zIndex: 200,
               overflow: 'hidden'
             }}>
               <div style={{ padding: '0.5rem 0.8rem', background: 'var(--bg-surface)', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Select System Role
+                Active Session Role
               </div>
               {[
-                { role: 'patient', label: 'Patient (Arun Kumar)', target: 'dashboard' },
-                { role: 'health-worker', label: 'ASHA / Health Worker', target: 'health-worker' },
-                { role: 'facility-staff', label: 'Hospital / OPD Staff', target: 'facility-staff' },
-                { role: 'admin', label: 'District Admin Officer', target: 'admin' }
+                { role: 'patient', label: `${fullName} (Patient Profile)`, target: 'dashboard' },
+                { role: 'health-worker', label: 'ASHA / Health Worker Desk', target: 'health-worker' },
+                { role: 'facility-staff', label: 'Hospital OPD & Lab Desk', target: 'facility-staff' },
+                { role: 'admin', label: 'District Admin Authority', target: 'admin' }
               ].map(r => (
                 <div 
                   key={r.role}
@@ -327,3 +335,5 @@ export const Header = () => {
     </header>
   );
 };
+
+export default Header;

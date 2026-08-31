@@ -5,9 +5,9 @@ import { Mic, MicOff, Sparkles, ArrowRight, ArrowLeft, Volume2, AlertTriangle, C
 export const SymptomInput = () => {
   const { t, navigateTo, submitSymptoms, addToast, playAudioChime } = useApp();
 
-  const [symptomText, setSymptomText] = useState('Fever for 3 days with weakness.');
-  const [selectedChips, setSelectedChips] = useState(['Fever', 'Weakness']);
-  const [duration, setDuration] = useState('3 days');
+  const [symptomText, setSymptomText] = useState(patientData.symptoms?.text || '');
+  const [selectedChips, setSelectedChips] = useState(patientData.symptoms?.selectedChips || []);
+  const [duration, setDuration] = useState(patientData.symptoms?.duration || '3 days');
   const [isListening, setIsListening] = useState(false);
 
   const availableChips = [
@@ -187,7 +187,7 @@ export const SymptomInput = () => {
           <div className="form-group" style={{ marginBottom: '1.75rem' }}>
             <label className="form-label">How long have you had these symptoms?</label>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {['Less than 24 hours', '1 - 2 days', '3 days (Arun Case)', '4 - 7 days', 'More than a week'].map(dur => (
+              {['Less than 24 hours', '1 - 2 days', '3 days', '4 - 7 days', 'More than a week'].map(dur => (
                 <button
                   key={dur}
                   type="button"

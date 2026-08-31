@@ -95,7 +95,7 @@ export const MedicineReminder = () => {
               Smart Medicine Reminder
             </h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Auto-synced from <strong>Dr. Priya Sharma's OPD Prescription</strong> for Arun Kumar
+              Auto-synced from <strong>Dr. Priya Sharma's OPD Prescription</strong> for {patientData.profile?.fullName || 'Citizen'}
             </p>
           </div>
 
